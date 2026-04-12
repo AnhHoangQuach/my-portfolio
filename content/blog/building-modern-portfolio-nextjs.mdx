@@ -1,0 +1,76 @@
+---
+title: 'Building a Modern Portfolio with Next.js 15 and Tailwind CSS v4'
+description: 'A deep dive into creating a performant, accessible portfolio website using the latest Next.js features, Tailwind CSS v4, and Framer Motion animations.'
+date: '2024-12-15'
+tags: ['Next.js', 'Tailwind CSS', 'React', 'Web Development']
+published: true
+image: '/images/blog/nextjs-portfolio.svg'
+---
+
+# Building a Modern Portfolio with Next.js 15 and Tailwind CSS v4
+
+Creating a developer portfolio is one of the best ways to showcase your skills while learning new technologies. In this post, I'll walk through the key decisions and techniques I used to build this portfolio site.
+
+## Why Next.js?
+
+Next.js provides an excellent foundation for a portfolio site:
+
+- **App Router** with file-based routing makes page creation intuitive
+- **Server Components** reduce client-side JavaScript for better performance
+- **Built-in SEO** support with the Metadata API
+- **Image optimization** out of the box
+
+## Tailwind CSS v4: What's New
+
+Tailwind CSS v4 introduces a CSS-first configuration approach:
+
+```css
+@import 'tailwindcss';
+
+@theme inline {
+  --color-primary: oklch(0.7 0.15 250);
+  --font-family-sans: 'Inter', sans-serif;
+}
+```
+
+This replaces the old `tailwind.config.ts` pattern entirely. The new approach feels more natural and integrates better with CSS tooling.
+
+## Animation with Framer Motion
+
+For subtle entrance animations, I created reusable motion wrappers:
+
+```tsx
+export function FadeIn({ children, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      viewport={{ once: true }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+```
+
+The `viewport={{ once: true }}` prop ensures animations trigger only once for a smoother experience.
+
+## Dark Mode with next-themes
+
+Implementing dark mode is straightforward with `next-themes`:
+
+1. Wrap the app in a `ThemeProvider`
+2. Use CSS variables for colors via Tailwind's theme
+3. Create a toggle button that cycles through modes
+
+The key insight is using `suppressHydrationWarning` on the `<html>` element to prevent hydration mismatches.
+
+## Key Takeaways
+
+- Use the latest tools — they often simplify what was previously complex
+- Invest in animation subtlety, not quantity
+- Prioritize performance and accessibility from the start
+- Structure your data separately from your components
+
+Happy building!

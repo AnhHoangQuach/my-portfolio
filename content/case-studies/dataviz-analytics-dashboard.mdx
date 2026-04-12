@@ -1,0 +1,79 @@
+---
+title: 'DataViz Analytics Dashboard'
+subtitle: 'Enterprise analytics platform with real-time data visualization'
+description: 'Built a comprehensive analytics dashboard with interactive charts, real-time data streaming, and customizable reporting for enterprise clients.'
+date: '2024-07-20'
+techStack: ['React', 'TypeScript', 'D3.js', 'Node.js', 'ClickHouse', 'Docker']
+published: true
+image: '/images/project-dashboard.svg'
+liveUrl: 'https://example.com'
+githubUrl: 'https://github.com'
+---
+
+# DataViz Analytics Dashboard
+
+## Overview
+
+DataViz is an enterprise-grade analytics platform that transforms raw data into actionable insights through interactive visualizations and automated reporting.
+
+## The Challenge
+
+Our client needed to consolidate data from 15+ sources into a single dashboard that could:
+
+- Visualize millions of data points without lag
+- Support real-time streaming data with sub-second updates
+- Allow non-technical users to build custom reports
+- Handle complex filter combinations across large datasets
+
+## Technical Approach
+
+### High-Performance Charting
+
+We combined D3.js with canvas rendering for datasets exceeding 100K points:
+
+```tsx
+function ScatterPlot({ data }: { data: DataPoint[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const ctx = canvasRef.current?.getContext('2d')
+    if (!ctx) return
+
+    // Use canvas for large datasets, SVG for small ones
+    if (data.length > 10000) {
+      renderCanvas(ctx, data)
+    }
+  }, [data])
+
+  return <canvas ref={canvasRef} />
+}
+```
+
+### ClickHouse for Analytics
+
+We chose ClickHouse over PostgreSQL for analytics queries:
+
+- **100x faster** for aggregation queries on large datasets
+- Columnar storage optimized for read-heavy workloads
+- Native support for time-series operations
+
+### Drag-and-Drop Report Builder
+
+Used a custom drag-and-drop system with constraint validation:
+
+- Users select dimensions and metrics from a sidebar
+- The system validates combinations that make analytical sense
+- Reports auto-generate with appropriate chart types
+
+## Results
+
+- **3 second** average dashboard load time with 10M+ rows
+- **85% adoption** rate among target users within 3 months
+- **60% reduction** in time spent creating manual reports
+- Successfully processing **2TB+ daily data** ingestion
+
+## Lessons Learned
+
+1. Canvas rendering is essential for large dataset visualization
+2. ClickHouse's learning curve pays off massively for analytics workloads
+3. User research before building the report builder saved months of iteration

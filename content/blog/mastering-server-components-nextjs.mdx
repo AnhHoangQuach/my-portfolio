@@ -1,0 +1,94 @@
+---
+title: 'Mastering Server Components in Next.js'
+description: 'Understanding when and how to use React Server Components effectively in Next.js applications for optimal performance.'
+date: '2024-10-08'
+tags: ['Next.js', 'React', 'Server Components', 'Performance']
+published: true
+image: '/images/blog/server-components.svg'
+---
+
+# Mastering Server Components in Next.js
+
+React Server Components (RSC) represent a fundamental shift in how we build React applications. Here's what I've learned after building several production apps with them.
+
+## The Mental Model
+
+Think of Server Components as the **default**. They run on the server, have zero JavaScript sent to the client, and can directly access databases, file systems, and APIs.
+
+Client Components are the **opt-in exception** for interactivity. Add `"use client"` only when you need:
+
+- Event handlers (`onClick`, `onChange`, etc.)
+- State (`useState`, `useReducer`)
+- Effects (`useEffect`)
+- Browser APIs (`window`, `localStorage`)
+
+## Data Fetching Patterns
+
+Server Components make data fetching trivial:
+
+```tsx
+// This component fetches data on the server — no useEffect needed
+async function BlogList() {
+  const posts = await getPosts()
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.slug}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+No loading states, no error boundaries for the initial render, no waterfalls. The HTML arrives fully rendered.
+
+## Composition Pattern
+
+The most powerful pattern is composing Server and Client Components:
+
+```tsx
+// Server Component (default)
+export default async function Page() {
+  const data = await fetchData()
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      {/* Client Component receives server-fetched data as props */}
+      <InteractiveChart data={data} />
+    </div>
+  )
+}
+```
+
+Pass server-fetched data as props to Client Components. This keeps the data fetching on the server while enabling interactivity on the client.
+
+## Streaming with Suspense
+
+Wrap slow data fetches in Suspense boundaries for progressive rendering:
+
+```tsx
+export default function Page() {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <Suspense fallback={<ChartSkeleton />}>
+        <SlowChart />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+The page shell renders instantly while expensive computations stream in.
+
+## Common Pitfalls
+
+1. **Don't pass functions as props** from Server to Client Components — functions aren't serializable
+2. **Don't import Client Components** into Server Components just for static rendering — you'll unnecessarily increase the bundle
+3. **Use `"use client"` at the lowest level** — push interactivity boundaries down the tree
+
+## Takeaway
+
+Server Components aren't just a performance optimization — they're a better way to write applications. Embrace them as the default and you'll find your apps are simpler, faster, and easier to reason about.

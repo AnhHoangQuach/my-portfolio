@@ -1,0 +1,69 @@
+---
+title: 'SkyConnect Airline Booking Platform'
+subtitle: 'A full-stack airline reservation system with real-time seat selection'
+description: 'Designed and built a modern airline booking platform featuring real-time seat maps, dynamic pricing, and a seamless checkout experience.'
+date: '2024-09-15'
+techStack: ['Next.js', 'TypeScript', 'PostgreSQL', 'Redis', 'Stripe', 'Tailwind CSS']
+published: true
+image: '/images/project-airline.svg'
+liveUrl: 'https://example.com'
+githubUrl: 'https://github.com'
+---
+
+# SkyConnect Airline Booking Platform
+
+## Overview
+
+SkyConnect is a modern airline booking platform built to handle high-concurrency seat reservations with real-time availability updates.
+
+## The Challenge
+
+Traditional booking systems suffer from race conditions when multiple users try to reserve the same seat. We needed a system that could:
+
+- Show real-time seat availability across concurrent sessions
+- Handle payment processing without double-booking
+- Scale to thousands of simultaneous users during flash sales
+
+## Architecture
+
+The system uses a **microservice-inspired** architecture within a monorepo:
+
+- **Frontend**: Next.js App Router with Server Components for fast initial loads
+- **API Layer**: Next.js Route Handlers with middleware for auth & rate limiting
+- **Database**: PostgreSQL with row-level locking for seat reservations
+- **Cache**: Redis for session management and real-time seat availability
+- **Payments**: Stripe integration with webhook handlers for async confirmation
+
+## Key Technical Decisions
+
+### Optimistic Locking for Seat Selection
+
+We used PostgreSQL's `SELECT FOR UPDATE SKIP LOCKED` to handle concurrent seat selections without blocking other users:
+
+```sql
+BEGIN;
+SELECT * FROM seats
+WHERE flight_id = $1 AND seat_number = $2 AND status = 'available'
+FOR UPDATE SKIP LOCKED;
+-- If row returned, proceed with reservation
+UPDATE seats SET status = 'held', held_by = $3, held_until = NOW() + INTERVAL '10 minutes'
+WHERE id = $4;
+COMMIT;
+```
+
+### Real-Time Updates with Server-Sent Events
+
+Instead of WebSockets (which are harder to scale), we used SSE for pushing seat availability changes to connected clients.
+
+## Results
+
+- **99.97% uptime** during peak booking periods
+- **Zero double-bookings** across 50K+ reservations
+- **< 200ms** average API response time
+- **40% reduction** in booking abandonment compared to the legacy system
+
+## Lessons Learned
+
+1. Optimistic UI updates dramatically improve perceived performance
+2. Redis pub/sub is excellent for lightweight real-time features
+3. Always design for failure — every external service will go down eventually

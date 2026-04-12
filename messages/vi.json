@@ -1,0 +1,77 @@
+{
+  "nav": {
+    "work": "Dự án",
+    "tech": "Công nghệ",
+    "experience": "Kinh nghiệm",
+    "blog": "Blog",
+    "contact": "Liên hệ",
+    "resume": "CV"
+  },
+  "hero": {
+    "role": "Kỹ sư Fullstack Cấp cao",
+    "tagline": "Fullstack Developer | React, Node.js, Golang, Kafka, AWS",
+    "bio": "Xây dựng hệ thống phân tán hiệu suất cao và giao diện hoàn hảo từng pixel. Hơn 5 năm kinh nghiệm phát triển giải pháp quy mô lớn cho doanh nghiệp và startup.",
+    "viewProjects": "Xem Dự án",
+    "contactMe": "Liên hệ",
+    "downloadCv": "Tải CV"
+  },
+  "about": {
+    "yearsExperience": "Năm Kinh nghiệm",
+    "globalProjects": "Dự án Quốc tế",
+    "certifications": "Chứng chỉ",
+    "langProficiency": "Ngoại ngữ"
+  },
+  "skills": {
+    "title": "Kho Vũ khí Công nghệ",
+    "description": "Stack công nghệ cân bằng, tối ưu cho hiệu suất, khả năng mở rộng và trải nghiệm developer."
+  },
+  "experience": {
+    "title": "Hành trình Chuyên nghiệp"
+  },
+  "projects": {
+    "title": "Dự án Nổi bật",
+    "caseStudy": "Chi tiết",
+    "liveDemo": "Xem Demo",
+    "viewCode": "Xem Code"
+  },
+  "certifications": {
+    "title": "Thành tựu"
+  },
+  "contact": {
+    "title": "Hãy cùng xây dựng",
+    "titleHighlight": "điều tuyệt vời",
+    "titleEnd": ".",
+    "description": "Tôi đang tìm kiếm cơ hội senior và các dự án tư vấn có tác động lớn. Dù bạn có câu hỏi hay chỉ muốn chào, inbox tôi luôn mở.",
+    "emailMe": "Email",
+    "location": "Địa điểm",
+    "name": "Họ tên",
+    "email": "Email",
+    "message": "Tin nhắn",
+    "namePlaceholder": "Nguyễn Văn A",
+    "emailPlaceholder": "email@example.com",
+    "messagePlaceholder": "Kể cho tôi nghe về dự án của bạn...",
+    "send": "Gửi tin nhắn",
+    "errorName": "Vui lòng nhập tên",
+    "errorEmail": "Vui lòng nhập email",
+    "errorEmailInvalid": "Email không hợp lệ",
+    "errorMessage": "Vui lòng nhập nội dung"
+  },
+  "footer": {
+    "builtWith": "Xây dựng với sự chính xác.",
+    "backToTop": "Về đầu trang"
+  },
+  "blog": {
+    "title": "Blog",
+    "description": "Chia sẻ về kỹ thuật, kiến trúc và xây dựng hệ thống quy mô lớn.",
+    "readMore": "Đọc thêm",
+    "minRead": "phút đọc",
+    "backToBlog": "Về Blog"
+  },
+  "caseStudy": {
+    "backToWork": "Về Dự án",
+    "techStack": "Công nghệ",
+    "challenge": "Thách thức",
+    "solution": "Giải pháp",
+    "results": "Kết quả"
+  }
+}

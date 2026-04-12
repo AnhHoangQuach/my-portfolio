@@ -1,0 +1,77 @@
+{
+  "nav": {
+    "work": "Work",
+    "tech": "Tech Stack",
+    "experience": "Experience",
+    "blog": "Blog",
+    "contact": "Contact",
+    "resume": "Resume"
+  },
+  "hero": {
+    "role": "Senior Fullstack Engineer",
+    "tagline": "Fullstack Developer | React, Node.js, Golang, Kafka, AWS",
+    "bio": "Engineering high-performance distributed systems and pixel-perfect interfaces. Over 5 years of crafting scalable solutions for enterprise and high-growth startups.",
+    "viewProjects": "View Projects",
+    "contactMe": "Contact Me",
+    "downloadCv": "Download CV"
+  },
+  "about": {
+    "yearsExperience": "Years Experience",
+    "globalProjects": "Global Projects",
+    "certifications": "Certifications",
+    "langProficiency": "Lang Proficiency"
+  },
+  "skills": {
+    "title": "The Tech Arsenal",
+    "description": "A balanced stack optimized for performance, scalability, and developer experience."
+  },
+  "experience": {
+    "title": "Professional Journey"
+  },
+  "projects": {
+    "title": "Featured Works",
+    "caseStudy": "Case Study",
+    "liveDemo": "Live Demo",
+    "viewCode": "View Code"
+  },
+  "certifications": {
+    "title": "Badges of Excellence"
+  },
+  "contact": {
+    "title": "Let's build something",
+    "titleHighlight": "great",
+    "titleEnd": "together.",
+    "description": "I'm currently open to senior roles and high-impact consultancy projects. Whether you have a question or just want to say hi, my inbox is open.",
+    "emailMe": "Email Me",
+    "location": "Location",
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "namePlaceholder": "John Doe",
+    "emailPlaceholder": "john@example.com",
+    "messagePlaceholder": "Tell me about your project...",
+    "send": "Send Message",
+    "errorName": "Name is required",
+    "errorEmail": "Email is required",
+    "errorEmailInvalid": "Invalid email address",
+    "errorMessage": "Message is required"
+  },
+  "footer": {
+    "builtWith": "Built with precision.",
+    "backToTop": "Back to top"
+  },
+  "blog": {
+    "title": "Blog",
+    "description": "Thoughts on engineering, architecture, and building at scale.",
+    "readMore": "Read more",
+    "minRead": "min read",
+    "backToBlog": "Back to Blog"
+  },
+  "caseStudy": {
+    "backToWork": "Back to Projects",
+    "techStack": "Tech Stack",
+    "challenge": "The Challenge",
+    "solution": "The Solution",
+    "results": "Results"
+  }
+}

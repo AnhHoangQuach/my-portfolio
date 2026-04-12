@@ -1,0 +1,84 @@
+---
+title: 'TypeScript Best Practices for React Applications'
+description: 'Practical TypeScript patterns and best practices that will level up your React codebase — from proper typing to advanced generics.'
+date: '2024-11-20'
+tags: ['TypeScript', 'React', 'Best Practices']
+published: true
+image: '/images/blog/typescript-react.svg'
+---
+
+# TypeScript Best Practices for React Applications
+
+TypeScript has become the standard for serious React applications. Here are some patterns I've found essential for maintaining a clean, type-safe codebase.
+
+## 1. Prefer Interfaces for Component Props
+
+```tsx
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'ghost'
+  size?: 'sm' | 'md' | 'lg'
+  children: React.ReactNode
+  onClick?: () => void
+}
+```
+
+Interfaces give better error messages and are more performant for the type checker than type aliases for object shapes.
+
+## 2. Use `satisfies` for Type-Safe Data
+
+```tsx
+const routes = {
+  home: '/',
+  about: '/about',
+  blog: '/blog',
+} satisfies Record<string, string>
+```
+
+The `satisfies` operator validates the type while preserving the narrower inferred type — you get both safety and autocompletion.
+
+## 3. Generic Components
+
+```tsx
+interface ListProps<T> {
+  items: T[]
+  renderItem: (item: T) => React.ReactNode
+  keyExtractor: (item: T) => string
+}
+
+function List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={keyExtractor(item)}>{renderItem(item)}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+Generic components give you type inference at the call site — no need to manually specify type parameters.
+
+## 4. Discriminated Unions for State
+
+```tsx
+type AsyncState<T> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: Error }
+```
+
+This pattern makes impossible states unrepresentable and gives you exhaustive checking in switch statements.
+
+## 5. Const Assertions for Static Data
+
+```tsx
+const THEMES = ['light', 'dark', 'system'] as const
+type Theme = (typeof THEMES)[number] // "light" | "dark" | "system"
+```
+
+Use `as const` to derive union types from arrays — single source of truth for both runtime and compile-time values.
+
+## Conclusion
+
+These patterns have significantly improved the maintainability and developer experience in my projects. TypeScript's type system is powerful — invest time in learning its advanced features and you'll write more confident code.
