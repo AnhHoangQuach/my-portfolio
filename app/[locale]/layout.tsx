@@ -5,6 +5,10 @@ import { siteConfig } from '@/lib/site-config'
 import { routing } from '@/i18n/routing'
 import { Analytics } from '@vercel/analytics/react'
 
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }))
+}
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
