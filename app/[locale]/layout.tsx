@@ -4,6 +4,7 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { siteConfig } from '@/lib/site-config'
 import { routing } from '@/i18n/routing'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
@@ -108,6 +109,7 @@ export default async function LocaleLayout({
     <NextIntlClientProvider locale={locale} messages={messages}>
       {children}
       <Analytics />
+      <SpeedInsights />
     </NextIntlClientProvider>
   )
 }
