@@ -3,22 +3,17 @@ import { SocialLink } from '@/types'
 export const socialLinks: SocialLink[] = [
   {
     name: 'GitHub',
-    url: 'https://github.com/quachhoanganh',
+    url: 'https://github.com/AnhHoangQuach',
     icon: 'github',
   },
   {
     name: 'LinkedIn',
-    url: 'https://linkedin.com/in/quachhoanganh',
+    url: 'https://linkedin.com/in/quach-hoang-anh/',
     icon: 'linkedin',
   },
   {
     name: 'Email',
-    url: 'mailto:hello@hayes.io.vn',
+    url: 'mailto:hoanganh36.work@gmail.com',
     icon: 'mail',
-  },
-  {
-    name: 'Twitter',
-    url: 'https://twitter.com/quachhoanganh',
-    icon: 'twitter',
   },
 ]

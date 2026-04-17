@@ -1,15 +1,16 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { ArrowRight, Download, Mail } from 'lucide-react'
 import { GithubIcon, LinkedinIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
-import { FadeIn } from '@/components/motion'
+import { FadeIn, TextReveal } from '@/components/motion'
+import { ParticleNetwork, useSupressThreeWarnings } from '@/components/three'
 import { profile } from '@/data/profile'
 import { socialLinks } from '@/data/social-links'
 import { useTranslations } from 'next-intl'
 
-const iconMap: Record<string, React.ElementType> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   github: GithubIcon,
   linkedin: LinkedinIcon,
   mail: Mail,
@@ -17,14 +18,18 @@ const iconMap: Record<string, React.ElementType> = {
 
 export function HeroSection() {
   const t = useTranslations('hero')
+  useSupressThreeWarnings()
 
   return (
     <section
       id="top"
       className="relative flex min-h-[calc(100vh-4rem)] items-center overflow-hidden px-6 md:px-8"
     >
+      {/* Three.js particle network background */}
+      <ParticleNetwork className="pointer-events-none absolute inset-0 opacity-60" />
+
       {/* Subtle background grid */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,var(--color-border)_1px,transparent_0)] bg-size-[40px_40px] opacity-30" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,var(--color-border)_1px,transparent_0)] bg-size-[40px_40px] opacity-20" />
 
       {/* Gradient blobs */}
       <div className="pointer-events-none absolute -top-40 right-0 h-125 w-125 rounded-full bg-primary/5 blur-[120px]" />
@@ -39,8 +44,12 @@ export function HeroSection() {
 
         <FadeIn transition={{ delay: 0.1 }}>
           <h1 className="max-w-3xl text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl">
-            {profile.name.split(' ').slice(0, -1).join(' ')}{' '}
-            <span className="text-primary">{profile.name.split(' ').pop()}</span>
+            <TextReveal text={profile.name.split(' ').slice(0, -1).join(' ') + ' '} delay={0.1} />
+            <TextReveal
+              text={profile.name.split(' ').pop() || ''}
+              className="text-primary"
+              delay={0.6}
+            />
           </h1>
         </FadeIn>
 

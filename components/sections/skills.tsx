@@ -1,6 +1,6 @@
 'use client'
 
-import { Monitor, Terminal, Cloud, Database } from 'lucide-react'
+import { Monitor, Terminal, Cloud, Database, ShieldCheck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Section, SectionHeader } from '@/components/section'
@@ -9,11 +9,12 @@ import { skillGroups } from '@/data/skills'
 import { cn } from '@/lib/utils'
 import { useTranslations } from 'next-intl'
 
-const iconMap: Record<string, React.ElementType> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   monitor: Monitor,
   terminal: Terminal,
   cloud: Cloud,
   database: Database,
+  'shield-check': ShieldCheck,
 }
 
 const gridSpan: Record<number, string> = {
@@ -21,6 +22,7 @@ const gridSpan: Record<number, string> = {
   1: 'md:col-span-5',
   2: 'md:col-span-5',
   3: 'md:col-span-7',
+  4: 'md:col-span-12',
 }
 
 export function SkillsSection() {

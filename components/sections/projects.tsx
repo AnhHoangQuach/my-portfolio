@@ -1,14 +1,14 @@
 'use client'
 
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { ArrowUpRight, FileText } from 'lucide-react'
 import { GithubIcon } from '@/components/icons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Section, SectionHeader } from '@/components/section'
 import { FadeIn, FadeInStagger, FadeInStaggerItem } from '@/components/motion'
+import { FloatingShapes } from '@/components/three'
 import { projects } from '@/data/projects'
 import { useTranslations } from 'next-intl'
 
@@ -16,7 +16,10 @@ export function ProjectsSection() {
   const t = useTranslations('projects')
 
   return (
-    <Section id="work">
+    <Section id="work" className="relative overflow-hidden">
+      {/* Floating wireframe shapes background */}
+      <FloatingShapes className="pointer-events-none absolute inset-0 opacity-40" />
+
       <FadeIn>
         <SectionHeader title={t('title')} />
       </FadeIn>

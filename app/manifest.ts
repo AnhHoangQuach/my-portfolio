@@ -2,10 +2,10 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Quach Hoang Anh — Senior Fullstack Engineer | hayes.io.vn',
+    name: 'Quach Hoang Anh — Senior Full-Stack Developer | hayes.io.vn',
     short_name: 'Hayes Portfolio',
     description:
-      'Senior Fullstack Engineer specializing in React, Next.js, Node.js, Golang, Kafka & AWS. Portfolio of Quach Hoang Anh.',
+      'Senior Full-Stack Developer specializing in Next.js, React, TypeScript, Node.js, NestJS & AWS. Portfolio of Quach Hoang Anh.',
     start_url: '/',
     display: 'standalone',
     background_color: '#0b1326',

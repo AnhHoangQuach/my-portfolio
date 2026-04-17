@@ -7,7 +7,7 @@ import { FadeIn, FadeInStagger, FadeInStaggerItem } from '@/components/motion'
 import { certifications } from '@/data/certifications'
 import { useTranslations } from 'next-intl'
 
-const iconMap: Record<string, React.ElementType> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   award: Award,
   languages: Languages,
   'graduation-cap': GraduationCap,

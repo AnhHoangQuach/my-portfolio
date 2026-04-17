@@ -1,4 +1,3 @@
-import Script from 'next/script'
 import { siteConfig } from '@/lib/site-config'
 import { profile } from '@/data/profile'
 
@@ -13,10 +12,10 @@ export function JsonLd() {
     description: profile.bio,
     address: {
       '@type': 'PostalAddress',
-      addressLocality: 'Ho Chi Minh City',
+      addressLocality: 'Da Nang',
       addressCountry: 'VN',
     },
-    sameAs: [siteConfig.links.github, siteConfig.links.linkedin, siteConfig.links.twitter],
+    sameAs: [siteConfig.links.github, siteConfig.links.linkedin],
     knowsAbout: [
       'React',
       'Next.js',
@@ -50,15 +49,13 @@ export function JsonLd() {
 
   return (
     <>
-      <Script
-        id="person-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(personSchema).replace(/</g, '\\u003c'),
         }}
       />
-      <Script
-        id="website-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(websiteSchema).replace(/</g, '\\u003c'),

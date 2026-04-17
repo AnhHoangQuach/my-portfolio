@@ -8,9 +8,9 @@
     "resume": "CV"
   },
   "hero": {
-    "role": "Kỹ sư Fullstack Cấp cao",
-    "tagline": "Fullstack Developer | React, Node.js, Golang, Kafka, AWS",
-    "bio": "Xây dựng hệ thống phân tán hiệu suất cao và giao diện hoàn hảo từng pixel. Hơn 5 năm kinh nghiệm phát triển giải pháp quy mô lớn cho doanh nghiệp và startup.",
+    "role": "Lập trình viên Full-Stack Cấp cao",
+    "tagline": "Full-Stack Developer | Next.js, React, Node.js, NestJS, TypeScript, AWS",
+    "bio": "Tôi là lập trình viên Full-Stack với kinh nghiệm vững chắc về React, Next.js, Node.js, NestJS và hệ thống cloud-native. Tôi đã làm việc trong cả môi trường sản phẩm và outsourcing, phát triển ứng dụng web có khả năng mở rộng, tính năng thời gian thực, dịch vụ phân tán và pipeline triển khai.",
     "viewProjects": "Xem Dự án",
     "contactMe": "Liên hệ",
     "downloadCv": "Tải CV"
@@ -22,8 +22,8 @@
     "langProficiency": "Ngoại ngữ"
   },
   "skills": {
-    "title": "Kho Vũ khí Công nghệ",
-    "description": "Stack công nghệ cân bằng, tối ưu cho hiệu suất, khả năng mở rộng và trải nghiệm developer."
+    "title": "Chuyên môn Cốt lõi",
+    "description": "Stack công nghệ toàn diện bao gồm frontend, backend, dữ liệu, DevOps và best practices kỹ thuật."
   },
   "experience": {
     "title": "Hành trình Chuyên nghiệp"
@@ -41,7 +41,7 @@
     "title": "Hãy cùng xây dựng",
     "titleHighlight": "điều tuyệt vời",
     "titleEnd": ".",
-    "description": "Tôi đang tìm kiếm cơ hội senior và các dự án tư vấn có tác động lớn. Dù bạn có câu hỏi hay chỉ muốn chào, inbox tôi luôn mở.",
+    "description": "Tôi đang tìm kiếm cơ hội làm việc với các đội ngũ quốc tế, đặc biệt ở Châu Âu và Bắc Mỹ. Dù bạn có câu hỏi hay chỉ muốn chào, inbox tôi luôn mở.",
     "emailMe": "Email",
     "location": "Địa điểm",
     "name": "Họ tên",

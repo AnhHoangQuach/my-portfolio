@@ -21,7 +21,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html className={`${inter.variable} ${jakarta.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${jakarta.variable}`}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <TooltipProvider>{children}</TooltipProvider>

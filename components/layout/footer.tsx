@@ -1,19 +1,18 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Mail, ArrowUp } from 'lucide-react'
-import { GithubIcon, LinkedinIcon, TwitterIcon } from '@/components/icons'
+import { GithubIcon, LinkedinIcon } from '@/components/icons'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { socialLinks } from '@/data/social-links'
 import { profile } from '@/data/profile'
 import { useTranslations } from 'next-intl'
 
-const iconMap: Record<string, React.ElementType> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   github: GithubIcon,
   linkedin: LinkedinIcon,
   mail: Mail,
-  twitter: TwitterIcon,
 }
 
 export function Footer() {
@@ -36,6 +35,7 @@ export function Footer() {
           <div className="flex items-center gap-4">
             {socialLinks.map((link) => {
               const Icon = iconMap[link.icon]
+              if (!Icon) return null
               return (
                 <Link
                   key={link.name}
@@ -45,7 +45,7 @@ export function Footer() {
                   aria-label={link.name}
                   className="text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {Icon && <Icon className="h-5 w-5" />}
+                  <Icon className="h-5 w-5" />
                 </Link>
               )
             })}

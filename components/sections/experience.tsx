@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Section, SectionHeader } from '@/components/section'
-import { FadeIn, FadeInStagger, FadeInStaggerItem } from '@/components/motion'
+import { FadeIn, FadeInStagger, FadeInStaggerItem, SlideIn } from '@/components/motion'
 import { experiences } from '@/data/experiences'
 import { useTranslations } from 'next-intl'
 
@@ -20,21 +20,26 @@ export function ExperienceSection() {
         <div className="absolute left-4 top-0 h-full w-px bg-border md:left-1/2 md:-translate-x-px" />
 
         <FadeInStagger className="space-y-16">
-          {experiences.map((exp, i) => (
+          {experiences.map((exp) => (
             <FadeInStaggerItem key={exp.company} className="relative">
               <div className="flex flex-col md:flex-row md:gap-12">
-                {/* Timeline dot */}
-                <div className="absolute left-4 top-1 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-primary ring-4 ring-primary/20 md:left-1/2" />
+                {/* Timeline dot with pulse animation */}
+                <div className="absolute left-4 top-1 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-primary ring-4 ring-primary/20 md:left-1/2">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-primary/40" />
+                </div>
 
                 {/* Duration - left side on desktop */}
-                <div className="mb-4 pl-10 md:mb-0 md:w-1/2 md:pl-0 md:pr-12 md:text-right">
+                <SlideIn
+                  direction="left"
+                  className="mb-4 pl-10 md:mb-0 md:w-1/2 md:pl-0 md:pr-12 md:text-right"
+                >
                   <span className="text-sm font-semibold tracking-widest text-primary uppercase">
                     {exp.duration}
                   </span>
-                </div>
+                </SlideIn>
 
                 {/* Content - right side on desktop */}
-                <div className="pl-10 md:w-1/2 md:pl-12">
+                <SlideIn direction="right" className="pl-10 md:w-1/2 md:pl-12">
                   <h3 className="text-2xl font-bold">{exp.company}</h3>
                   <p className="mt-1 font-medium text-muted-foreground">{exp.role}</p>
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -47,7 +52,7 @@ export function ExperienceSection() {
                       </Badge>
                     ))}
                   </div>
-                </div>
+                </SlideIn>
               </div>
             </FadeInStaggerItem>
           ))}

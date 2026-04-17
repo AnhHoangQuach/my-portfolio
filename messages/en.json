@@ -8,9 +8,9 @@
     "resume": "Resume"
   },
   "hero": {
-    "role": "Senior Fullstack Engineer",
-    "tagline": "Fullstack Developer | React, Node.js, Golang, Kafka, AWS",
-    "bio": "Engineering high-performance distributed systems and pixel-perfect interfaces. Over 5 years of crafting scalable solutions for enterprise and high-growth startups.",
+    "role": "Senior Full-Stack Developer",
+    "tagline": "Full-Stack Developer | Next.js, React, Node.js, NestJS, TypeScript, AWS",
+    "bio": "I'm a Full-Stack Developer with strong experience in React, Next.js, Node.js, NestJS, and cloud-native systems. I've worked across product and outsourcing environments, delivering scalable web applications, real-time features, distributed services, and deployment pipelines.",
     "viewProjects": "View Projects",
     "contactMe": "Contact Me",
     "downloadCv": "Download CV"
@@ -22,8 +22,8 @@
     "langProficiency": "Lang Proficiency"
   },
   "skills": {
-    "title": "The Tech Arsenal",
-    "description": "A balanced stack optimized for performance, scalability, and developer experience."
+    "title": "Core Expertise",
+    "description": "A comprehensive tech stack covering frontend, backend, data, DevOps, and engineering best practices."
   },
   "experience": {
     "title": "Professional Journey"
@@ -41,7 +41,7 @@
     "title": "Let's build something",
     "titleHighlight": "great",
     "titleEnd": "together.",
-    "description": "I'm currently open to senior roles and high-impact consultancy projects. Whether you have a question or just want to say hi, my inbox is open.",
+    "description": "I'm currently open to opportunities with global teams, especially in Europe and North America. Whether you have a question or just want to say hi, my inbox is open.",
     "emailMe": "Email Me",
     "location": "Location",
     "name": "Name",

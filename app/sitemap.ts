@@ -29,12 +29,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 1,
+      alternates: {
+        languages: { en: siteUrl, vi: `${siteUrl}/vi` },
+      },
     },
     {
       url: `${siteUrl}/blog`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
+      alternates: {
+        languages: { en: `${siteUrl}/blog`, vi: `${siteUrl}/vi/blog` },
+      },
     },
     ...blogUrls,
     ...caseStudyUrls,
