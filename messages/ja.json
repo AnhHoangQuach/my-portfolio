@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "about": "概要",
+    "experience": "経歴",
+    "work": "実績",
+    "expertise": "技術領域",
+    "practice": "働き方",
+    "blog": "ブログ",
+    "contact": "お問い合わせ",
+    "resume": "履歴書",
+    "menu": "ナビゲーション",
+    "openMenu": "メニューを開く"
+  },
+  "hero": {
+    "eyebrow": "シニアソフトウェアエンジニア · ベトナム ダナン",
+    "headline": "スケールに耐えるソフトウェアをつくる。",
+    "viewWork": "実績を見る",
+    "downloadResume": "履歴書をダウンロード",
+    "terminalTitle": "~/systems — zsh",
+    "pipelineTitle": "EVENT PIPELINE — LIVE"
+  },
+  "about": {
+    "eyebrow": "概要",
+    "title": "地味な部分こそ、丁寧に。",
+    "paragraphOne": "自社プロダクトと受託開発の両方で5年間、スキーマ設計から本番へ届けるデプロイパイプラインまで一貫して担当してきました。近年の仕事の中心はバックエンドとプラットフォームです。境界を明確にした NestJS と Go のサービス、PostgreSQL のモデリングとクエリチューニング、Kafka と MQTT によるデータ取り込み、分散キャッシュとしての Redis、そして Kubernetes と Argo CD によるデリバリー。",
+    "paragraphTwo": "銀行向けハードウェア企業ではサブチームをリードし、ブロックチェーンのコンサルティング会社ではデリバリーを統括、インターンや新人が独り立ちできるまで指導してきました。いつも立ち返る習慣は、最適化の前に計測すること、そして修正は正直にレビューできる大きさに保つこと。高可用性の構築、ペネトレーションテストの指摘対応、定期的な依存パッケージ更新も同じ発想から来ています。システムは来四半期も動き続けていなければ意味がありません。",
+    "factYears": "本番Webシステムの開発・運用",
+    "factCompanies": "社（自社プロダクトと受託）",
+    "factLeadValue": "リード",
+    "factLead": "サブチームリード・レビュー・育成",
+    "factScrum": "スクラム / ハノイ工科大学 ソフトウェア工学"
+  },
+  "experience": {
+    "eyebrow": "経歴",
+    "title": "6つのチーム、一貫した軸は「負荷に耐えること」。"
+  },
+  "projects": {
+    "eyebrow": "主な実績",
+    "title": "3つのシステムをケーススタディとして。",
+    "description": "課題・解決策・アーキテクチャ・成果 — レビューでチームに説明するのと同じ順序で。",
+    "problem": "課題",
+    "solution": "解決策",
+    "architecture": "アーキテクチャ",
+    "techStack": "技術スタック",
+    "impact": "成果",
+    "caseStudy": "ケーススタディを読む"
+  },
+  "expertise": {
+    "eyebrow": "技術領域",
+    "title": "選ぶ技術と、その理由。"
+  },
+  "practice": {
+    "eyebrow": "リードと働き方",
+    "title": "シニアの仕事の多くは、コードの周辺で起きている。",
+    "description": "Glory でのサブチーム、s6k Labs でのデリバリーチームをリードして学んだのは、システムのスループットと、それを保守する人たちのスループットは同じ問題だということでした。"
+  },
+  "principles": {
+    "eyebrow": "エンジニアリング原則",
+    "title": "譲らない5つの原則。"
+  },
+  "contact": {
+    "eyebrow": "お問い合わせ",
+    "title": "スケールさせる価値のあるものを、一緒に。",
+    "description": "シニアバックエンド・プラットフォーム・フルスタックのポジションを検討しています。最も早いのはメールです。1日以内に返信します。"
+  },
+  "footer": {
+    "backToTop": "トップへ戻る"
+  },
+  "blog": {
+    "title": "ブログ",
+    "description": "エンジニアリング、アーキテクチャ、大規模開発についての記録。",
+    "readMore": "続きを読む",
+    "minRead": "分で読めます",
+    "backToBlog": "ブログ一覧へ"
+  },
+  "caseStudy": {
+    "backToWork": "実績一覧へ",
+    "techStack": "技術スタック",
+    "challenge": "課題",
+    "solution": "解決策",
+    "results": "成果"
+  }
+}

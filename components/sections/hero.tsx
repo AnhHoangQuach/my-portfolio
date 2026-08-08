@@ -1,117 +1,61 @@
-'use client'
-
-import { Link } from '@/i18n/navigation'
-import { ArrowRight, Download, Mail } from 'lucide-react'
-import { GithubIcon, LinkedinIcon } from '@/components/icons'
-import { Button } from '@/components/ui/button'
-import { FadeIn, TextReveal } from '@/components/motion'
-import { ParticleNetwork, useSupressThreeWarnings } from '@/components/three'
-import { profile } from '@/data/profile'
-import { socialLinks } from '@/data/social-links'
 import { useTranslations } from 'next-intl'
-
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  github: GithubIcon,
-  linkedin: LinkedinIcon,
-  mail: Mail,
-}
+import { ArrowRight } from 'lucide-react'
+import { Link } from '@/i18n/navigation'
+import { TerminalCard } from '@/components/hero/terminal-card'
+import { PipelineCard } from '@/components/hero/pipeline-card'
+import { profile } from '@/data/profile'
 
 export function HeroSection() {
   const t = useTranslations('hero')
-  useSupressThreeWarnings()
 
   return (
     <section
-      id="top"
-      className="relative flex min-h-[calc(100vh-4rem)] items-center overflow-hidden px-6 md:px-8"
+      className="pt-16 pb-15 md:pt-20 md:pb-18 lg:pt-26 lg:pb-22"
+      aria-labelledby="hero-heading"
     >
-      {/* Three.js particle network background */}
-      <ParticleNetwork className="pointer-events-none absolute inset-0 opacity-60" />
+      {/* Deliberately NOT wrapped in <Reveal>: this block holds the LCP
+          element, so it must paint on the server response, not after
+          hydration. */}
+      <p className="flex items-center gap-3.5 font-mono text-xs tracking-[0.16em] text-faint uppercase">
+        <span className="size-1.75 rounded-full bg-brand-cyan shadow-[0_0_12px_var(--brand-cyan)]" />
+        {t('eyebrow')}
+      </p>
 
-      {/* Subtle background grid */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,var(--color-border)_1px,transparent_0)] bg-size-[40px_40px] opacity-20" />
+      <h1
+        id="hero-heading"
+        className="mt-7 max-w-[16ch] font-heading text-[clamp(2.75rem,7.4vw,6.5rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance"
+      >
+        {t('headline')}
+      </h1>
 
-      {/* Gradient blobs */}
-      <div className="pointer-events-none absolute -top-40 right-0 h-125 w-125 rounded-full bg-primary/5 blur-[120px]" />
-      <div className="pointer-events-none absolute -bottom-40 left-0 h-100 w-100 rounded-full bg-primary/3 blur-[100px]" />
+      <div className="mt-10 grid items-end gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <p className="max-w-[52ch] text-base leading-[1.65] text-dim text-pretty sm:text-lg">
+          {profile.bio}
+        </p>
 
-      <div className="relative mx-auto max-w-6xl py-24 lg:py-32">
-        <FadeIn>
-          <p className="mb-4 text-sm font-medium tracking-widest text-primary uppercase">
-            {profile.role}
-          </p>
-        </FadeIn>
+        <div className="flex flex-wrap gap-3.5 pb-1">
+          <Link
+            href="#work"
+            className="bg-brand-ramp inline-flex items-center gap-2.5 rounded-xl px-6 py-4 text-[0.95rem] font-medium text-background shadow-2xl shadow-brand-blue/35 transition-transform duration-250 hover:-translate-y-0.5"
+          >
+            {t('viewWork')}
+            <ArrowRight className="size-4" />
+          </Link>
+          <Link
+            href={profile.resumeUrl}
+            className="inline-flex items-center gap-2.5 rounded-xl border border-hairline bg-foreground/3 px-6 py-4 text-[0.95rem] font-medium text-foreground transition-colors duration-250 hover:border-brand-cyan/60 hover:bg-brand-blue/12"
+          >
+            {t('downloadResume')}
+          </Link>
+        </div>
+      </div>
 
-        <FadeIn transition={{ delay: 0.1 }}>
-          <h1 className="max-w-3xl text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl">
-            <TextReveal text={profile.name.split(' ').slice(0, -1).join(' ') + ' '} delay={0.1} />
-            <TextReveal
-              text={profile.name.split(' ').pop() || ''}
-              className="text-primary"
-              delay={0.6}
-            />
-          </h1>
-        </FadeIn>
-
-        <FadeIn transition={{ delay: 0.2 }}>
-          <p className="mt-4 text-lg font-medium text-muted-foreground sm:text-xl">
-            {profile.tagline}
-          </p>
-        </FadeIn>
-
-        <FadeIn transition={{ delay: 0.3 }}>
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            {profile.bio}
-          </p>
-        </FadeIn>
-
-        <FadeIn transition={{ delay: 0.4 }}>
-          <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Button size="lg" nativeButton={false} render={<Link href="#work" />}>
-              {t('viewProjects')}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              nativeButton={false}
-              render={<Link href="#contact" />}
-            >
-              {t('contactMe')}
-            </Button>
-            <Button
-              size="lg"
-              variant="ghost"
-              nativeButton={false}
-              render={<Link href={profile.resumeUrl} />}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {t('downloadCv')}
-            </Button>
-          </div>
-        </FadeIn>
-
-        <FadeIn transition={{ delay: 0.5 }}>
-          <div className="mt-12 flex items-center gap-4">
-            {socialLinks
-              .filter((l) => ['github', 'linkedin', 'mail'].includes(l.icon))
-              .map((link) => {
-                const Icon = iconMap[link.icon]
-                return (
-                  <Link
-                    key={link.name}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={link.name}
-                    className="rounded-full border border-border/40 p-3 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-                  >
-                    {Icon && <Icon className="h-5 w-5" />}
-                  </Link>
-                )
-              })}
-          </div>
-        </FadeIn>
+      {/* Also unrevealed: on a 412×823 phone the terminal card starts around
+          y=684, i.e. inside the fold, so gating it on hydration would make it
+          the LCP element and push LCP out to hydration time. */}
+      <div className="mt-18 grid gap-5.5 lg:grid-cols-2">
+        <TerminalCard title={t('terminalTitle')} />
+        <PipelineCard title={t('pipelineTitle')} />
       </div>
     </section>
   )

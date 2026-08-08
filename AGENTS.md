@@ -2,7 +2,9 @@
 
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
 
@@ -16,7 +18,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - **Project**: Portfolio site for Quach Hoang Anh
 - **Domain**: `hayes.io.vn`
-- **Stack**: Next.js 16.2.3 · React 19 · Tailwind CSS v4 · shadcn/ui v4 (base-ui) · next-intl 4.9 · Framer Motion · MDX
+- **Stack**: Next.js 16.3.0 · React 19 · Tailwind CSS v4 · shadcn/ui v4 (base-ui) · next-intl 4.9 · MDX
 
 ## Hard Rules — Violations Will Break the Build
 
@@ -49,17 +51,17 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 4. Internationalization (next-intl)
 
-- **Two locales**: `en` (default, no prefix), `vi` (prefix `/vi`).
+- **Two locales**: `en` (default, no prefix), `ja` (prefix `/ja`).
 - **All user-facing strings** in section components must use `useTranslations()`. Never hardcode display text.
-- **Translation files**: `messages/en.json`, `messages/vi.json`. Both MUST stay in sync — if you add a key to one, add it to the other.
+- **Translation files**: `messages/en.json`, `messages/ja.json`. Both MUST stay in sync — if you add a key to one, add it to the other.
 - **Locale-aware links** in client components: Import `Link` from `@/i18n/navigation`, not `next/link`.
 
 ### 5. Brand Icons
 
-`lucide-react` does NOT have GitHub/LinkedIn/Twitter icons. Import from:
+`lucide-react` does NOT have GitHub/LinkedIn icons. Import from:
 
 ```tsx
-import { GithubIcon, LinkedinIcon, TwitterIcon } from '@/components/icons'
+import { GithubIcon, LinkedinIcon } from '@/components/icons'
 ```
 
 ### 6. Content (Blog / Case Studies)
@@ -71,7 +73,7 @@ import { GithubIcon, LinkedinIcon, TwitterIcon } from '@/components/icons'
 
 ### 7. Data Layer
 
-- Static data lives in `data/*.ts` (profile, skills, experiences, projects, certifications, social-links, navigation).
+- Static data lives in `data/*.ts` (profile, navigation, hero, experiences, projects, expertise, practice, principles).
 - Type definitions in `types/index.ts` and `types/content.ts`.
 - Site-wide config (URL, OG image, description) in `lib/site-config.ts`.
 
@@ -84,6 +86,6 @@ import { GithubIcon, LinkedinIcon, TwitterIcon } from '@/components/icons'
 | Add shadcn component | `npx shadcn add <name>`                             |
 | Add blog post        | Create `content/blog/<slug>.mdx`                    |
 | Add case study       | Create `content/case-studies/<slug>.mdx`            |
-| Add translation key  | Edit both `messages/en.json` AND `messages/vi.json` |
+| Add translation key  | Edit both `messages/en.json` AND `messages/ja.json` |
 | Change site URL/meta | Edit `lib/site-config.ts`                           |
 | Next.js 16 docs      | `node_modules/next/dist/docs/`                      |

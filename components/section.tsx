@@ -4,33 +4,62 @@ interface SectionProps {
   id?: string
   children: React.ReactNode
   className?: string
+  /** Sections are separated by a hairline rule; the hero opts out. */
+  divider?: boolean
 }
 
-export function Section({ id, children, className }: SectionProps) {
+export function Section({ id, children, className, divider = true }: SectionProps) {
   return (
-    <section id={id} className={cn('py-24 px-6 md:px-8 lg:py-32', className)}>
-      <div className="mx-auto max-w-6xl">{children}</div>
+    <section
+      id={id}
+      className={cn(
+        'scroll-mt-20 py-18 md:py-24 lg:py-31',
+        divider && 'border-t border-hairline',
+        className,
+      )}
+    >
+      {children}
     </section>
   )
 }
 
-interface SectionHeaderProps {
-  title: string
-  description?: string
-  className?: string
-  align?: 'left' | 'center'
+/** Mono, wide-tracked kicker — "03 — Featured Work". */
+export function SectionEyebrow({ index, children }: { index: string; children: React.ReactNode }) {
+  return (
+    <div className="font-mono text-[0.72rem] tracking-[0.2em] text-faint uppercase">
+      {index} — {children}
+    </div>
+  )
 }
 
-export function SectionHeader({
-  title,
-  description,
+export function SectionTitle({
+  children,
   className,
-  align = 'left',
-}: SectionHeaderProps) {
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
   return (
-    <div className={cn('mb-16', align === 'center' && 'text-center', className)}>
-      <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">{title}</h2>
-      {description && <p className="mt-4 max-w-2xl text-lg text-muted-foreground">{description}</p>}
-    </div>
+    <h2
+      className={cn(
+        'mt-5 font-heading text-3xl leading-[1.06] font-semibold tracking-[-0.03em] text-balance sm:text-4xl lg:text-5xl',
+        className,
+      )}
+    >
+      {children}
+    </h2>
+  )
+}
+
+/** Supporting paragraph that sits directly under a section title. */
+export function SectionLead({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <p className={cn('mt-3 max-w-[56ch] text-base text-faint text-pretty', className)}>{children}</p>
   )
 }

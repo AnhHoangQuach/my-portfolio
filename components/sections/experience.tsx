@@ -1,62 +1,58 @@
-'use client'
-
-import { Badge } from '@/components/ui/badge'
-import { Section, SectionHeader } from '@/components/section'
-import { FadeIn, FadeInStagger, FadeInStaggerItem, SlideIn } from '@/components/motion'
-import { experiences } from '@/data/experiences'
 import { useTranslations } from 'next-intl'
+import { Section, SectionEyebrow, SectionTitle } from '@/components/section'
+import { Reveal } from '@/components/reveal'
+import { experiences } from '@/data/experiences'
 
 export function ExperienceSection() {
   const t = useTranslations('experience')
 
   return (
-    <Section id="experience" className="bg-muted/30">
-      <FadeIn>
-        <SectionHeader title={t('title')} align="center" />
-      </FadeIn>
+    <Section id="experience">
+      <Reveal>
+        <SectionEyebrow index="02">{t('eyebrow')}</SectionEyebrow>
+        <SectionTitle className="mb-12 max-w-[20ch]">{t('title')}</SectionTitle>
+      </Reveal>
 
-      <div className="relative mx-auto max-w-3xl">
-        {/* Timeline line */}
-        <div className="absolute left-4 top-0 h-full w-px bg-border md:left-1/2 md:-translate-x-px" />
+      <div className="flex flex-col">
+        {experiences.map((exp) => (
+          <Reveal
+            key={exp.company}
+            className="grid gap-8 rounded-2xl border-t border-hairline px-4 py-7 transition-colors hover:bg-brand-blue/6 lg:grid-cols-3"
+          >
+            <div>
+              <h3 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground">
+                {exp.company}
+              </h3>
+              <p className="mt-1.5 text-sm text-dim">{exp.role}</p>
+              <p className="mt-2.5 font-mono text-xs text-faint">{exp.period}</p>
+              <p className="mt-2.5 max-w-[34ch] text-[0.78rem] leading-[1.55] text-faint">
+                {exp.note}
+              </p>
+            </div>
 
-        <FadeInStagger className="space-y-16">
-          {experiences.map((exp) => (
-            <FadeInStaggerItem key={exp.company} className="relative">
-              <div className="flex flex-col md:flex-row md:gap-12">
-                {/* Timeline dot with pulse animation */}
-                <div className="absolute left-4 top-1 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-primary ring-4 ring-primary/20 md:left-1/2">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-primary/40" />
-                </div>
+            <div className="min-w-0 lg:col-span-2">
+              <ul className="flex flex-col gap-2.75">
+                {exp.points.map((point) => (
+                  <li key={point} className="flex gap-3 text-[0.94rem] leading-[1.6] text-dim">
+                    <span className="bg-brand-ramp mt-2.25 size-1.25 flex-none rounded-full" />
+                    <span className="text-pretty">{point}</span>
+                  </li>
+                ))}
+              </ul>
 
-                {/* Duration - left side on desktop */}
-                <SlideIn
-                  direction="left"
-                  className="mb-4 pl-10 md:mb-0 md:w-1/2 md:pl-0 md:pr-12 md:text-right"
-                >
-                  <span className="text-sm font-semibold tracking-widest text-primary uppercase">
-                    {exp.duration}
-                  </span>
-                </SlideIn>
-
-                {/* Content - right side on desktop */}
-                <SlideIn direction="right" className="pl-10 md:w-1/2 md:pl-12">
-                  <h3 className="text-2xl font-bold">{exp.company}</h3>
-                  <p className="mt-1 font-medium text-muted-foreground">{exp.role}</p>
-                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                    {exp.description}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {exp.techStack.map((tech) => (
-                      <Badge key={tech} variant="outline" className="text-xs">
-                        {tech}
-                      </Badge>
-                    ))}
-                  </div>
-                </SlideIn>
-              </div>
-            </FadeInStaggerItem>
-          ))}
-        </FadeInStagger>
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {exp.techStack.map((tech) => (
+                  <li
+                    key={tech}
+                    className="rounded-full border border-hairline px-2.75 py-1.25 font-mono text-[0.69rem] text-faint"
+                  >
+                    {tech}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+        ))}
       </div>
     </Section>
   )

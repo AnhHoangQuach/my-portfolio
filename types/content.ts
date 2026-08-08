@@ -6,7 +6,6 @@ export interface BlogPost {
   tags: string[]
   readingTime: number
   published: boolean
-  image?: string
 }
 
 export interface CaseStudy {
@@ -16,7 +15,6 @@ export interface CaseStudy {
   description: string
   date: string
   techStack: string[]
-  image?: string
   liveUrl?: string
   githubUrl?: string
   published: boolean

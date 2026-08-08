@@ -3,11 +3,12 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getCaseStudy, getCaseStudies } from '@/lib/content'
 import { Badge } from '@/components/ui/badge'
-import { Navbar } from '@/components/layout/navbar'
+import { SiteHeader } from '@/components/layout/site-header'
 import { Footer } from '@/components/layout/footer'
 import { ArrowLeft, CalendarDays, ExternalLink } from 'lucide-react'
 import { GithubIcon } from '@/components/icons'
 import { MDXRemote } from '@/components/mdx-remote'
+import { localeAlternates } from '@/lib/metadata'
 
 export async function generateStaticParams() {
   const studies = getCaseStudies()
@@ -17,9 +18,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ locale: string; slug: string }>
 }): Promise<Metadata> {
-  const { slug } = await params
+  const { locale, slug } = await params
   const study = getCaseStudy(slug)
   if (!study) return {}
   return {
@@ -30,6 +31,7 @@ export async function generateMetadata({
       description: study.meta.description,
       type: 'article',
     },
+    alternates: localeAlternates(locale, `/work/${slug}`),
   }
 }
 
@@ -40,8 +42,8 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
 
   return (
     <>
-      <Navbar />
-      <main>
+      <SiteHeader />
+      <main id="top">
         <article className="mx-auto max-w-3xl px-6 pt-32 pb-20">
           <Link
             href="/#projects"

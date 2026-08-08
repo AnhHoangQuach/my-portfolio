@@ -1,63 +1,69 @@
 {
   "nav": {
-    "work": "Work",
-    "tech": "Tech Stack",
+    "about": "About",
     "experience": "Experience",
+    "work": "Work",
+    "expertise": "Expertise",
+    "practice": "Practice",
     "blog": "Blog",
     "contact": "Contact",
-    "resume": "Resume"
+    "resume": "Resume",
+    "menu": "Navigation",
+    "openMenu": "Open menu"
   },
   "hero": {
-    "role": "Senior Full-Stack Developer",
-    "tagline": "Full-Stack Developer | Next.js, React, Node.js, NestJS, TypeScript, AWS",
-    "bio": "I'm a Full-Stack Developer with strong experience in React, Next.js, Node.js, NestJS, and cloud-native systems. I've worked across product and outsourcing environments, delivering scalable web applications, real-time features, distributed services, and deployment pipelines.",
-    "viewProjects": "View Projects",
-    "contactMe": "Contact Me",
-    "downloadCv": "Download CV"
+    "eyebrow": "Senior Software Engineer · Da Nang, Vietnam",
+    "headline": "Building software that survives scale.",
+    "viewWork": "View My Work",
+    "downloadResume": "Download Resume",
+    "terminalTitle": "~/systems — zsh",
+    "pipelineTitle": "EVENT PIPELINE — LIVE"
   },
   "about": {
-    "yearsExperience": "Years Experience",
-    "globalProjects": "Global Projects",
-    "certifications": "Certifications",
-    "langProficiency": "Lang Proficiency"
-  },
-  "skills": {
-    "title": "Core Expertise",
-    "description": "A comprehensive tech stack covering frontend, backend, data, DevOps, and engineering best practices."
+    "eyebrow": "About",
+    "title": "I build the boring parts well.",
+    "paragraphOne": "Five years across product and outsourcing teams, taking features from schema design through to the deploy pipeline that ships them. Most of my recent work is backend and platform: NestJS and Go services with real boundaries, PostgreSQL modelling and query tuning, Kafka and MQTT ingestion, Redis as a distributed cache, Kubernetes with Argo CD for delivery.",
+    "paragraphTwo": "I've led a sub-team at a banking-hardware product company, led delivery at a blockchain consultancy, and mentored interns and freshers into shipping engineers. The habit I keep returning to: measure before optimising, then keep the fix small enough to be reviewed honestly. High-availability work, pentest remediation and scheduled dependency upgrades belong to the same instinct — the system has to still be standing next quarter.",
+    "factYears": "Shipping production web systems",
+    "factCompanies": "Companies, product and outsourcing",
+    "factLeadValue": "Lead",
+    "factLead": "Sub-team lead, reviews, mentoring",
+    "factScrum": "Scrum, HUST software engineering"
   },
   "experience": {
-    "title": "Professional Journey"
+    "eyebrow": "Experience",
+    "title": "Six teams, one throughline: make it hold under load."
   },
   "projects": {
-    "title": "Featured Works",
-    "caseStudy": "Case Study",
-    "liveDemo": "Live Demo",
-    "viewCode": "View Code"
+    "eyebrow": "Featured Work",
+    "title": "Three systems, written up as case studies.",
+    "description": "Problem, solution, architecture, impact — the way I'd walk a team through it in review.",
+    "problem": "Problem",
+    "solution": "Solution",
+    "architecture": "Architecture",
+    "techStack": "Tech stack",
+    "impact": "Impact",
+    "caseStudy": "Read the case study"
   },
-  "certifications": {
-    "title": "Badges of Excellence"
+  "expertise": {
+    "eyebrow": "Technical Expertise",
+    "title": "What I reach for, and why."
+  },
+  "practice": {
+    "eyebrow": "Leadership & Practice",
+    "title": "Senior work is mostly what happens around the code.",
+    "description": "Leading a sub-team at Glory and a delivery team at s6k Labs taught me that the throughput of a system and the throughput of the people maintaining it are the same problem."
+  },
+  "principles": {
+    "eyebrow": "Engineering Principles",
+    "title": "Five rules I don't trade away."
   },
   "contact": {
-    "title": "Let's build something",
-    "titleHighlight": "great",
-    "titleEnd": "together.",
-    "description": "I'm currently open to opportunities with global teams, especially in Europe and North America. Whether you have a question or just want to say hi, my inbox is open.",
-    "emailMe": "Email Me",
-    "location": "Location",
-    "name": "Name",
-    "email": "Email",
-    "message": "Message",
-    "namePlaceholder": "John Doe",
-    "emailPlaceholder": "john@example.com",
-    "messagePlaceholder": "Tell me about your project...",
-    "send": "Send Message",
-    "errorName": "Name is required",
-    "errorEmail": "Email is required",
-    "errorEmailInvalid": "Invalid email address",
-    "errorMessage": "Message is required"
+    "eyebrow": "Contact",
+    "title": "Let's build something worth scaling.",
+    "description": "Open to senior backend, platform and full-stack roles. Fastest way to reach me is email — I answer within a day."
   },
   "footer": {
-    "builtWith": "Built with precision.",
     "backToTop": "Back to top"
   },
   "blog": {

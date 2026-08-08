@@ -21,15 +21,15 @@
 
 | Layer      | Technology                          | Version    | Notes                                                                               |
 | ---------- | ----------------------------------- | ---------- | ----------------------------------------------------------------------------------- |
-| Framework  | **Next.js**                         | **16.2.3** | App Router, Turbopack, `proxy.ts` replaces `middleware.ts`                          |
+| Framework  | **Next.js**                         | **16.3.0** | App Router, Turbopack, `proxy.ts` replaces `middleware.ts`                          |
 | React      | **React**                           | **19.2.4** | Server Components by default                                                        |
 | Styling    | **Tailwind CSS**                    | **v4**     | CSS-first config (`@theme inline {}` in `globals.css`). No `tailwind.config.ts`.    |
 | Components | **shadcn/ui**                       | **v4**     | Built on `@base-ui/react` (NOT Radix). Uses `render` prop, NOT `asChild`.           |
-| i18n       | **next-intl**                       | **4.9.1**  | `localePrefix: "as-needed"`, locales: `en`, `vi`                                    |
+| i18n       | **next-intl**                       | **4.9.1**  | `localePrefix: "as-needed"`, locales: `en`, `ja`                                    |
 | Content    | **@next/mdx** + **next-mdx-remote** | latest     | MDX for blog & case studies, parsed with `gray-matter` + `reading-time`             |
-| Animation  | **Framer Motion**                   | 12.x       | Via `FadeIn`, `FadeInStagger`, `FadeInStaggerItem` wrappers                         |
+| Animation  | **CSS transitions**                 | —          | `Reveal` / `RevealGroup` toggle `[data-reveal]` via one shared IntersectionObserver |
 | Theme      | **next-themes**                     | 0.4.x      | Dark (default) / Light / System                                                     |
-| Icons      | **lucide-react**                    | 1.8.x      | Brand icons (GitHub, LinkedIn, Twitter/X) are custom SVGs in `components/icons.tsx` |
+| Icons      | **lucide-react**                    | 1.8.x      | Brand icons (GitHub, LinkedIn) are custom SVGs in `components/icons.tsx`            |
 | Analytics  | **@vercel/analytics**               | 2.x        | Loaded in `app/[locale]/layout.tsx`                                                 |
 | SEO        | Metadata API + JSON-LD              | —          | `lib/site-config.ts` centralizes URL/OG/description                                 |
 
@@ -47,7 +47,10 @@
 ### 3.2 Tailwind CSS v4
 
 - **No `tailwind.config.ts`** — all theming is done in `app/globals.css` via `@theme inline {}`.
-- Colors use **oklch** values with a blue-tinted palette (hue 260).
+- Colors use **oklch** values with a blue-tinted palette (hue 260/265).
+- A `cyan → blue → violet` brand ramp is exposed as `--brand-cyan/blue/violet` plus the
+  `bg-brand-ramp`, `bg-brand-line`, `text-brand-ramp` and `bg-panel-gradient` component classes.
+- Extra text tiers: `text-dim` (body) and `text-faint` (meta), plus `border-hairline` for section rules.
 - Prefer **built-in utilities** over arbitrary values: `h-125` not `h-[500px]`, `translate-y-10` not `translate-y-[2.5rem]`.
 - Use `bg-size-[...]` instead of `[background-size:...]`.
 - Use `supports-backdrop-filter:` instead of `supports-[backdrop-filter]:`.
@@ -68,9 +71,10 @@
 
 ### 3.4 Internationalization (next-intl)
 
-- **Routing**: `localePrefix: "as-needed"` — English at `/`, Vietnamese at `/vi/...`.
+- **Routing**: `localePrefix: "as-needed"` — English at `/`, Japanese at `/ja/...`.
 - **App structure**: Pages live under `app/[locale]/`. The root `app/layout.tsx` is a thin shell (fonts + body); the locale layout (`app/[locale]/layout.tsx`) provides `NextIntlClientProvider`, `ThemeProvider`, metadata, and analytics.
-- **Translations**: `messages/en.json` and `messages/vi.json`. Keyed by section: `nav`, `hero`, `about`, `skills`, `experience`, `projects`, `certifications`, `contact`, `footer`, `blog`, `caseStudy`.
+- **Translations**: `messages/en.json` and `messages/ja.json`. Keyed by section: `nav`, `hero`, `about`, `experience`, `projects`, `expertise`, `practice`, `principles`, `contact`, `footer`, `blog`, `caseStudy`.
+- **Split of concerns**: headings, eyebrows and UI labels live in `messages/`; CV-record content (company names, role bullets, case-study prose, tech chips) lives in `data/*.ts` in English and is shared by both locales.
 - **Usage in components**: All `"use client"` section components import `useTranslations` from `next-intl`:
   ```tsx
   const t = useTranslations('hero')
@@ -110,10 +114,10 @@
 
 ### 3.6 Brand Icons
 
-`lucide-react` does **not** export `Github`, `Linkedin`, or `Twitter` icons. Use the custom SVG components from `@/components/icons`:
+`lucide-react` does **not** export `Github` or `Linkedin` icons. Use the custom SVG components from `@/components/icons`:
 
 ```tsx
-import { GithubIcon, LinkedinIcon, TwitterIcon } from '@/components/icons'
+import { GithubIcon, LinkedinIcon } from '@/components/icons'
 ```
 
 ---
@@ -137,37 +141,45 @@ import { GithubIcon, LinkedinIcon, TwitterIcon } from '@/components/icons'
 │       └── work/
 │           └── [slug]/page.tsx  # Case study detail (MDX rendered)
 ├── components/
-│   ├── icons.tsx                # Custom SVG brand icons (GitHub, LinkedIn, Twitter/X)
+│   ├── icons.tsx                # Custom SVG brand icons (GitHub, LinkedIn)
 │   ├── json-ld.tsx              # Structured data (Person + WebSite schemas)
 │   ├── locale-switcher.tsx      # EN/VI toggle button
 │   ├── mdx-remote.tsx           # MDX rendering wrapper
-│   ├── motion.tsx               # FadeIn, FadeInStagger, FadeInStaggerItem
-│   ├── section.tsx              # Section + SectionHeader layout primitives
+│   ├── reveal.tsx               # Reveal, RevealGroup (CSS scroll reveals)
+│   ├── use-reduced-motion.ts    # prefers-reduced-motion hook
+│   ├── section.tsx              # Section, SectionEyebrow, SectionTitle, SectionLead
+│   ├── architecture-flow.tsx    # Case-study node chain with animated edges
 │   ├── theme-provider.tsx       # next-themes wrapper
 │   ├── theme-toggle.tsx         # Dark/light toggle
+│   ├── hero/
+│   │   ├── terminal-card.tsx    # Looping typed shell transcript
+│   │   └── pipeline-card.tsx    # Event-pipeline SVG + stat strip
 │   ├── layout/
-│   │   ├── navbar.tsx           # Sticky nav with mobile sheet
-│   │   └── footer.tsx           # Footer with social links
+│   │   ├── navbar.tsx           # Sticky nav, scroll progress, scroll-spy, mobile sheet
+│   │   ├── background-glow.tsx  # Fixed CSS gradient field
+│   │   └── footer.tsx           # Mono footer strip
 │   ├── sections/
-│   │   ├── hero.tsx             # Hero with animated entrance
-│   │   ├── about.tsx            # Stats grid
-│   │   ├── skills.tsx           # Bento grid skill cards
-│   │   ├── experience.tsx       # Timeline
-│   │   ├── projects.tsx         # Alternating project showcase
-│   │   ├── certifications.tsx   # Card grid
-│   │   └── contact.tsx          # Form with client-side validation
+│   │   ├── hero.tsx             # Headline + terminal/pipeline cards
+│   │   ├── about.tsx            # 01 — prose + facts
+│   │   ├── experience.tsx       # 02 — role rows with bullets
+│   │   ├── projects.tsx         # 03 — case studies (problem/solution/arch/impact)
+│   │   ├── expertise.tsx        # 04 — hairline card grid
+│   │   ├── practice.tsx         # 05 — leadership cards
+│   │   ├── principles.tsx       # 06 — numbered rules
+│   │   └── contact.tsx          # 07 — centered CTA
 │   └── ui/                      # shadcn/ui primitives (DO NOT manually edit)
 ├── content/
 │   ├── blog/                    # MDX blog posts
 │   └── case-studies/            # MDX case studies
 ├── data/                        # Static data objects
 │   ├── profile.ts               # Name, role, bio, contact info
-│   ├── navigation.ts            # Nav items array
-│   ├── skills.ts                # Skill groups
+│   ├── navigation.ts            # Nav items array (+ sectionId for scroll-spy)
+│   ├── hero.ts                  # Terminal transcript + pipeline stats
 │   ├── experiences.ts           # Work history
-│   ├── projects.ts              # Featured projects
-│   ├── certifications.ts        # Certifications
-│   └── social-links.ts          # Social media links
+│   ├── projects.ts              # Case studies
+│   ├── expertise.ts             # Technical expertise areas
+│   ├── practice.ts              # Leadership & practice cards
+│   ├── principles.ts            # Engineering principles
 ├── i18n/
 │   ├── config.ts                # locales, defaultLocale, Locale type
 │   ├── request.ts               # getRequestConfig for server
@@ -179,9 +191,9 @@ import { GithubIcon, LinkedinIcon, TwitterIcon } from '@/components/icons'
 │   └── utils.ts                 # cn() utility (clsx + tailwind-merge)
 ├── messages/
 │   ├── en.json                  # English translations
-│   └── vi.json                  # Vietnamese translations
+│   └── ja.json                  # Japanese translations
 ├── types/
-│   ├── index.ts                 # Profile, SocialLink, Skill, Experience, Project, etc.
+│   ├── index.ts                 # Profile, Experience, Project, ExpertiseArea, Principle, etc.
 │   └── content.ts               # BlogPost, CaseStudy interfaces
 ├── proxy.ts                     # next-intl middleware (Next.js 16 "proxy" convention)
 ├── mdx-components.tsx           # Custom MDX component mappings
@@ -205,10 +217,10 @@ import { GithubIcon, LinkedinIcon, TwitterIcon } from '@/components/icons'
 
 ### Add a new section to the homepage
 
-1. Create `components/sections/<name>.tsx` (use `Section` + `SectionHeader` from `@/components/section`).
+1. Create `components/sections/<name>.tsx` (use `Section`, `SectionEyebrow`, `SectionTitle` from `@/components/section`).
 2. Add `"use client"` if it needs interactivity.
 3. Import `useTranslations` from `next-intl` for any visible strings.
-4. Add translation keys to both `messages/en.json` and `messages/vi.json`.
+4. Add translation keys to both `messages/en.json` and `messages/ja.json`.
 5. Import and add the component in `app/[locale]/page.tsx`.
 
 ### Add a new page
@@ -248,7 +260,7 @@ npm run lint         # ESLint
 | Issue                                         | Cause                                         | Fix                                                          |
 | --------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------ |
 | `asChild` doesn't work on Button/SheetTrigger | shadcn v4 uses base-ui, not Radix             | Use `render={<Component />}` prop instead                    |
-| `Github`/`Linkedin`/`Twitter` import errors   | Removed from lucide-react                     | Use custom icons from `@/components/icons`                   |
+| `Github`/`Linkedin` import errors             | Removed from lucide-react                     | Use custom icons from `@/components/icons`                   |
 | Arbitrary Tailwind values lint warnings       | Tailwind v4 prefers built-in utilities        | Use `h-125` not `h-[500px]`, etc.                            |
 | `middleware.ts` deprecation warning           | Next.js 16 renamed to `proxy.ts`              | File is already `proxy.ts` with named `proxy` export         |
 | `locale` type is `string \| undefined`        | `requestLocale` can be undefined              | Use `hasLocale()` from `next-intl` to narrow type            |

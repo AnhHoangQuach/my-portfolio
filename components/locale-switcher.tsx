@@ -8,7 +8,7 @@ import { Globe } from 'lucide-react'
 
 const localeLabels: Record<Locale, string> = {
   en: 'EN',
-  vi: 'VI',
+  ja: 'JA',
 }
 
 export function LocaleSwitcher() {
@@ -16,7 +16,7 @@ export function LocaleSwitcher() {
   const router = useRouter()
   const pathname = usePathname()
 
-  const nextLocale = locale === 'en' ? 'vi' : 'en'
+  const nextLocale = locale === 'en' ? 'ja' : 'en'
 
   function handleSwitch() {
     router.replace(pathname, { locale: nextLocale })
@@ -27,7 +27,9 @@ export function LocaleSwitcher() {
       variant="ghost"
       size="sm"
       onClick={handleSwitch}
-      aria-label={`Switch to ${localeLabels[nextLocale]}`}
+      // The accessible name must contain the visible label ("EN"), otherwise
+      // voice-control users cannot address the control by what they see.
+      aria-label={`${localeLabels[locale]} — switch to ${localeLabels[nextLocale]}`}
       className="gap-1.5"
     >
       <Globe className="h-4 w-4" />

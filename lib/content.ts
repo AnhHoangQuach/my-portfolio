@@ -33,7 +33,6 @@ export function getBlogPosts(): BlogPost[] {
         tags: data.tags || [],
         readingTime: Math.ceil(stats.minutes),
         published: data.published !== false,
-        image: data.image,
       } satisfies BlogPost
     })
     .filter((p) => p.published)
@@ -57,7 +56,6 @@ export function getBlogPost(slug: string) {
       tags: data.tags || [],
       readingTime: Math.ceil(stats.minutes),
       published: data.published !== false,
-      image: data.image,
     } satisfies BlogPost,
     content,
   }
@@ -80,7 +78,6 @@ export function getCaseStudies(): CaseStudy[] {
         description: data.description || '',
         date: data.date || new Date().toISOString(),
         techStack: data.techStack || [],
-        image: data.image,
         liveUrl: data.liveUrl,
         githubUrl: data.githubUrl,
         published: data.published !== false,
@@ -105,7 +102,6 @@ export function getCaseStudy(slug: string) {
       description: data.description || '',
       date: data.date || new Date().toISOString(),
       techStack: data.techStack || [],
-      image: data.image,
       liveUrl: data.liveUrl,
       githubUrl: data.githubUrl,
       published: data.published !== false,

@@ -2,8 +2,19 @@ import type { MetadataRoute } from 'next'
 
 import { siteConfig } from '@/lib/site-config'
 import { getBlogPosts, getCaseStudies } from '@/lib/content'
+import { routing } from '@/i18n/routing'
 
 const siteUrl = siteConfig.url
+
+/** hreflang map for a path, derived from the routing config. */
+function languagesFor(path: string) {
+  return Object.fromEntries(
+    routing.locales.map((l) => [
+      l,
+      l === routing.defaultLocale ? `${siteUrl}${path}` : `${siteUrl}/${l}${path}`,
+    ]),
+  )
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const posts = getBlogPosts()
@@ -30,7 +41,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 1,
       alternates: {
-        languages: { en: siteUrl, vi: `${siteUrl}/vi` },
+        languages: languagesFor(''),
       },
     },
     {
@@ -39,7 +50,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.8,
       alternates: {
-        languages: { en: `${siteUrl}/blog`, vi: `${siteUrl}/vi/blog` },
+        languages: languagesFor('/blog'),
       },
     },
     ...blogUrls,
