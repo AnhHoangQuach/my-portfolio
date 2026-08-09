@@ -1,66 +1,26 @@
-import { siteConfig } from '@/lib/site-config'
-import { profile } from '@/data/profile'
+import type { Thing, WithContext } from 'schema-dts'
 
-export function JsonLd() {
-  const personSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: profile.name,
-    url: siteConfig.url,
-    email: profile.email,
-    jobTitle: profile.role,
-    description: profile.bio,
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: 'Da Nang',
-      addressCountry: 'VN',
-    },
-    sameAs: [siteConfig.links.github, siteConfig.links.linkedin],
-    knowsAbout: [
-      'React',
-      'Next.js',
-      'TypeScript',
-      'Node.js',
-      'NestJS',
-      'Golang',
-      'PostgreSQL',
-      'MongoDB',
-      'Redis',
-      'Kafka',
-      'Docker',
-      'Kubernetes',
-      'AWS',
-      'Microservices',
-      'Distributed Systems',
-    ],
-  }
-
-  const websiteSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: `${profile.name} — Portfolio`,
-    url: siteConfig.url,
-    description: siteConfig.description,
-    author: {
-      '@type': 'Person',
-      name: profile.name,
-    },
-  }
+/**
+ * Renders one or more Schema.org graphs as `application/ld+json`.
+ *
+ * `<` is escaped because a stray `</script>` inside any string field — a blog
+ * title, a project description — would otherwise close the tag early and
+ * inject the remainder as markup.
+ */
+export function JsonLd({ schema }: { schema: WithContext<Thing> | Array<WithContext<Thing>> }) {
+  const graphs = Array.isArray(schema) ? schema : [schema]
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(personSchema).replace(/</g, '\\u003c'),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(websiteSchema).replace(/</g, '\\u003c'),
-        }}
-      />
+      {graphs.map((graph, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(graph).replace(/</g, '\\u003c'),
+          }}
+        />
+      ))}
     </>
   )
 }

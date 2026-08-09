@@ -16,16 +16,20 @@ export function HeroSection() {
       {/* Deliberately NOT wrapped in <Reveal>: this block holds the LCP
           element, so it must paint on the server response, not after
           hydration. */}
-      <p className="flex items-center gap-3.5 font-mono text-xs tracking-[0.16em] text-faint uppercase">
-        <span className="size-1.75 rounded-full bg-brand-cyan shadow-[0_0_12px_var(--brand-cyan)]" />
-        {t('eyebrow')}
-      </p>
+      {/* The eyebrow is now the first line *of* the h1 rather than a sibling
+          paragraph. Rendering is unchanged — same two lines, same type scale —
+          but the page's only h1 now reads "Quach Hoang Anh (Hayes) · Senior
+          Software Engineer. Building software that survives scale." instead of
+          the tagline alone, which carried neither the name nor the role. */}
+      <h1 id="hero-heading">
+        <span className="flex items-center gap-3.5 font-mono text-xs font-normal tracking-[0.16em] text-faint uppercase">
+          <span className="size-1.75 flex-none rounded-full bg-brand-cyan shadow-[0_0_12px_var(--brand-cyan)]" />
+          {t('eyebrow')}
+        </span>
 
-      <h1
-        id="hero-heading"
-        className="mt-7 max-w-[16ch] font-heading text-[clamp(2.75rem,7.4vw,6.5rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance"
-      >
-        {t('headline')}
+        <span className="mt-7 block max-w-[16ch] font-heading text-[clamp(2.75rem,7.4vw,6.5rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance">
+          {t('headline')}
+        </span>
       </h1>
 
       <div className="mt-10 grid items-end gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">

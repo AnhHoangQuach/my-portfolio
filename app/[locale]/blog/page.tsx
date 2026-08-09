@@ -1,10 +1,17 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { CalendarDays, Clock } from 'lucide-react'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+
+// `Link` from `@/i18n/navigation`, not `next/link`: the bare one emits
+// unprefixed hrefs, so every card on /ja/blog used to point back at the
+// English URL — a cross-locale link leak on every post.
+import { Link } from '@/i18n/navigation'
 import { getBlogPosts } from '@/lib/content'
-import { localeAlternates } from '@/lib/metadata'
+import { buildPageMetadata } from '@/lib/metadata'
+import { breadcrumbSchema, itemListSchema } from '@/lib/schema'
 import { SectionEyebrow, SectionLead, SectionTitle } from '@/components/section'
 import { Reveal, RevealGroup } from '@/components/reveal'
-import { CalendarDays, Clock } from 'lucide-react'
+import { JsonLd } from '@/components/json-ld'
 import { SiteHeader } from '@/components/layout/site-header'
 import { Footer } from '@/components/layout/footer'
 import { BackgroundGlow } from '@/components/layout/background-glow'
@@ -15,19 +22,37 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  return {
-    title: 'Blog',
-    description:
-      'Articles about web development, software engineering, React, Next.js, TypeScript, and more.',
-    alternates: localeAlternates(locale, '/blog'),
-  }
+  const t = await getTranslations({ locale, namespace: 'seo' })
+
+  return buildPageMetadata({
+    locale,
+    path: '/blog',
+    title: t('blogTitle'),
+    description: t('blogDescription'),
+  })
 }
 
-export default function BlogPage() {
+export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  setRequestLocale(locale)
+
+  const t = await getTranslations('seo')
   const posts = getBlogPosts()
 
   return (
     <div className="relative overflow-x-clip">
+      <JsonLd
+        schema={[
+          breadcrumbSchema(locale, [
+            { name: 'Home', path: '' },
+            { name: 'Blog', path: '/blog' },
+          ]),
+          itemListSchema(
+            locale,
+            posts.map((post) => ({ name: post.title, path: `/blog/${post.slug}` })),
+          ),
+        ]}
+      />
       <BackgroundGlow />
       <SiteHeader />
 
@@ -35,12 +60,11 @@ export default function BlogPage() {
         <section className="pt-16 pb-24 lg:pt-24">
           <Reveal>
             <SectionEyebrow index="—">Writing</SectionEyebrow>
-            <SectionTitle className="max-w-[18ch]">
-              Notes from production systems.
+            {/* Was an `h2`, which left this route with no `h1` at all. */}
+            <SectionTitle as="h1" className="max-w-[18ch]">
+              {t('blogTitle')}
             </SectionTitle>
-            <SectionLead className="mb-14">
-              Thoughts on web development, software engineering, and technology.
-            </SectionLead>
+            <SectionLead className="mb-14 max-w-[64ch]">{t('blogDescription')}</SectionLead>
           </Reveal>
 
           <RevealGroup className="grid gap-5.5 md:grid-cols-2 lg:grid-cols-3">
@@ -51,11 +75,13 @@ export default function BlogPage() {
                     <div className="flex items-center gap-4 font-mono text-[0.69rem] text-faint">
                       <span className="flex items-center gap-1.5">
                         <CalendarDays className="size-3.5" />
-                        {new Date(post.date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        <time dateTime={post.date}>
+                          {new Date(post.date).toLocaleDateString(locale, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </time>
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Clock className="size-3.5" />

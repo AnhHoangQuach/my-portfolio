@@ -32,22 +32,30 @@ export function SectionEyebrow({ index, children }: { index: string; children: R
   )
 }
 
+/**
+ * Section heading. Defaults to `h2` because the one-pager's only `h1` is the
+ * hero — but standalone routes (/blog, /work) are their own documents and need
+ * their lead heading to be the `h1`, so they pass `as="h1"`. Same type scale
+ * either way; the change is purely in the outline a crawler reads.
+ */
 export function SectionTitle({
   children,
   className,
+  as: Tag = 'h2',
 }: {
   children: React.ReactNode
   className?: string
+  as?: 'h1' | 'h2'
 }) {
   return (
-    <h2
+    <Tag
       className={cn(
         'mt-5 font-heading text-3xl leading-[1.06] font-semibold tracking-[-0.03em] text-balance sm:text-4xl lg:text-5xl',
         className,
       )}
     >
       {children}
-    </h2>
+    </Tag>
   )
 }
 

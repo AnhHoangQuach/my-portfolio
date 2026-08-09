@@ -28,8 +28,16 @@ export function ProjectsSection() {
                   <p className="font-mono text-[0.72rem] tracking-[0.12em] text-brand-cyan">
                     {project.tag}
                   </p>
+                  {/* The title links to the project's own page. Without it
+                      the three systems were reachable only as anchors on this
+                      one URL, so none of them could rank on their own. */}
                   <h3 className="mt-3 font-heading text-2xl font-semibold tracking-[-0.025em] sm:text-3xl lg:text-4xl">
-                    {project.title}
+                    <Link
+                      href={`/work/${project.slug}`}
+                      className="transition-colors hover:text-brand-cyan"
+                    >
+                      {project.title}
+                    </Link>
                   </h3>
                 </div>
                 <p className="font-mono text-xs text-faint">{project.meta}</p>
@@ -87,19 +95,27 @@ export function ProjectsSection() {
                 </div>
               </div>
 
-              {project.caseStudyUrl && (
-                <Link
-                  href={project.caseStudyUrl}
-                  className="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-brand-cyan transition-colors hover:text-brand-violet"
-                >
-                  {t('caseStudy')}
-                  <ArrowUpRight className="size-4" />
-                </Link>
-              )}
+              <Link
+                href={`/work/${project.slug}`}
+                className="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-brand-cyan transition-colors hover:text-brand-violet"
+              >
+                {t('caseStudy')}
+                <ArrowUpRight className="size-4" />
+              </Link>
             </article>
           </Reveal>
         ))}
       </div>
+
+      <Reveal className="mt-10">
+        <Link
+          href="/work"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-dim transition-colors hover:text-foreground"
+        >
+          {t('allWork')}
+          <ArrowUpRight className="size-4" />
+        </Link>
+      </Reveal>
     </Section>
   )
 }

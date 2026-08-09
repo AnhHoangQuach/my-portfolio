@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+
 import { SiteHeader } from '@/components/layout/site-header'
 import { Footer } from '@/components/layout/footer'
 import { BackgroundGlow } from '@/components/layout/background-glow'
@@ -11,7 +13,8 @@ import { PracticeSection } from '@/components/sections/practice'
 import { PrinciplesSection } from '@/components/sections/principles'
 import { ContactSection } from '@/components/sections/contact'
 import { JsonLd } from '@/components/json-ld'
-import { localeAlternates } from '@/lib/metadata'
+import { buildPageMetadata } from '@/lib/metadata'
+import { personSchema, profilePageSchema, websiteSchema } from '@/lib/schema'
 
 export async function generateMetadata({
   params,
@@ -19,13 +22,29 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  return { alternates: localeAlternates(locale) }
+  const t = await getTranslations({ locale, namespace: 'seo' })
+
+  return buildPageMetadata({
+    locale,
+    // `absoluteTitle` bypasses the `%s | Quach Hoang Anh (Hayes)` template —
+    // the homepage title already carries both names, and running it through
+    // the template would repeat them and blow past the SERP truncation point.
+    absoluteTitle: t('homeTitle'),
+    description: t('siteDescription'),
+    type: 'profile',
+  })
 }
 
-export default function Home() {
+export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  setRequestLocale(locale)
+
   return (
     <div className="relative overflow-x-clip">
-      <JsonLd />
+      {/* Person + WebSite + ProfilePage, cross-linked by @id. This is what
+          lets Google resolve "Quach Hoang Anh", "Hayes" and the GitHub /
+          LinkedIn profiles into a single entity. */}
+      <JsonLd schema={[personSchema(), websiteSchema(locale), profilePageSchema(locale)]} />
       <BackgroundGlow />
       <SiteHeader />
 

@@ -7,6 +7,8 @@ import { NavItem } from '@/types'
 export const navItems: NavItem[] = [
   { label: 'about', href: '#about', sectionId: 'about' },
   { label: 'experience', href: '#experience', sectionId: 'experience' },
+  // Scroll-spy target on the homepage; the section itself links out to /work
+  // and to each project's own page.
   { label: 'work', href: '#work', sectionId: 'work' },
   { label: 'expertise', href: '#expertise', sectionId: 'expertise' },
   { label: 'practice', href: '#practice', sectionId: 'practice' },

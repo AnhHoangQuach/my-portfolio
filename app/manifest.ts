@@ -4,10 +4,16 @@ import { siteConfig } from '@/lib/site-config'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Quach Hoang Anh — Senior Software Engineer | hayes.io.vn',
-    short_name: 'Hayes Portfolio',
+    name: `${siteConfig.name} (${siteConfig.alternateName}) — Senior Software Engineer`,
+    // Install prompts truncate around 12 characters; the domain was never
+    // going to survive, and Lighthouse flags a `short_name` that long.
+    short_name: siteConfig.alternateName,
     description: siteConfig.description,
+    id: '/',
     start_url: '/',
+    scope: '/',
+    lang: 'en',
+    categories: ['portfolio', 'technology', 'business'],
     display: 'standalone',
     background_color: '#05070d',
     theme_color: '#2b56ff',

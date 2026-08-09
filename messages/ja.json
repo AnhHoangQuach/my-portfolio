@@ -1,4 +1,22 @@
 {
+  "seo": {
+    "siteTitle": "Quach Hoang Anh (Hayes) — シニアソフトウェアエンジニア",
+    "siteDescription": "Next.js・React・TypeScript・Node.js・Go を専門とするシニアソフトウェアエンジニア。バックエンドサービス、イベント駆動アーキテクチャ、スケーラブルなシステムを設計。現金処理機のテレメトリ、航空券販売基盤、リアルタイムマーケットプレイスを5年間開発・運用してきました。",
+    "homeTitle": "Quach Hoang Anh (Hayes) — シニアソフトウェアエンジニア",
+    "blogTitle": "エンジニアリングノート",
+    "blogDescription": "バックエンドアーキテクチャ、本番環境の Next.js と React、TypeScript、分散システム、パフォーマンス改善についての技術記事 — Hayes が実際に開発・運用したシステムからの記録。",
+    "workTitle": "ケーススタディと実績",
+    "workDescription": "Quach Hoang Anh (Hayes) が設計・開発した本番システム — 現金処理テレメトリ、航空券販売基盤、リアルタイムオークションについて、課題・アーキテクチャ・技術選定・成果をまとめています。"
+  },
+  "notFound": {
+    "eyebrow": "404 — ページが見つかりません",
+    "title": "このページは存在しません。",
+    "description": "リンクが古い可能性があります。以下からお進みください。",
+    "home": "ホーム",
+    "work": "ケーススタディ",
+    "blog": "ブログ",
+    "contact": "お問い合わせ"
+  },
   "nav": {
     "about": "概要",
     "experience": "経歴",
@@ -12,7 +30,7 @@
     "openMenu": "メニューを開く"
   },
   "hero": {
-    "eyebrow": "シニアソフトウェアエンジニア · ベトナム ダナン",
+    "eyebrow": "Quach Hoang Anh (Hayes) · シニアソフトウェアエンジニア",
     "headline": "スケールに耐えるソフトウェアをつくる。",
     "viewWork": "実績を見る",
     "downloadResume": "履歴書をダウンロード",
@@ -43,7 +61,8 @@
     "architecture": "アーキテクチャ",
     "techStack": "技術スタック",
     "impact": "成果",
-    "caseStudy": "ケーススタディを読む"
+    "caseStudy": "ケーススタディを読む",
+    "allWork": "実績をすべて見る"
   },
   "expertise": {
     "eyebrow": "技術領域",

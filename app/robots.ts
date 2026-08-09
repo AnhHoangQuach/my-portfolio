@@ -1,15 +1,20 @@
 import type { MetadataRoute } from 'next'
 
-export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hayes.io.vn'
+import { siteConfig } from '@/lib/site-config'
 
+export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
+        // Next's internal build assets and the Vercel toolbar carry no
+        // indexable content; keeping crawlers out of them saves crawl budget
+        // on a site this small.
+        disallow: ['/api/', '/_next/', '/_vercel/'],
       },
     ],
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: `${siteConfig.url}/sitemap.xml`,
+    host: siteConfig.url,
   }
 }

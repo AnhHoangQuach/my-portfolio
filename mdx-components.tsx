@@ -1,9 +1,16 @@
 import type { MDXComponents } from 'mdx/types'
+import Image from 'next/image'
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
+    /**
+     * Demoted to `h2`. Every MDX file opens with a `# Title` that repeats the
+     * title the page already renders as its `h1`, so each article was shipping
+     * two competing `h1`s. Keeping the h1 type scale means the change is
+     * invisible; only the document outline moves.
+     */
     h1: ({ children }) => (
-      <h1 className="mt-8 mb-4 text-4xl font-bold tracking-tight">{children}</h1>
+      <h2 className="mt-8 mb-4 text-4xl font-bold tracking-tight">{children}</h2>
     ),
     h2: ({ children }) => (
       <h2 className="mt-8 mb-3 text-2xl font-bold tracking-tight">{children}</h2>
@@ -40,10 +47,29 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         {children}
       </a>
     ),
-    img: ({ src, alt }) => (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt={alt || ''} className="my-4 rounded-lg border border-border" />
-    ),
+    /**
+     * MDX gives no intrinsic dimensions, so the 16:9 box below is what
+     * reserves layout space — a raw `<img>` collapsed to zero height until it
+     * decoded, which is a guaranteed CLS hit mid-article. `next/image` also
+     * gets us AVIF/WebP and lazy loading; article images are never the LCP
+     * element, so none of them are prioritised.
+     */
+    img: ({ src, alt, title }) =>
+      src ? (
+        <figure className="my-6">
+          <Image
+            src={src}
+            alt={alt || ''}
+            width={1200}
+            height={675}
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="h-auto w-full rounded-lg border border-border"
+          />
+          {title && (
+            <figcaption className="mt-2 text-center text-sm text-faint">{title}</figcaption>
+          )}
+        </figure>
+      ) : null,
     hr: () => <hr className="my-8 border-border" />,
     ...components,
   }

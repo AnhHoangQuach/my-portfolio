@@ -1,4 +1,22 @@
 {
+  "seo": {
+    "siteTitle": "Quach Hoang Anh (Hayes) — Senior Software Engineer",
+    "siteDescription": "Senior Software Engineer specializing in Next.js, React, TypeScript, Node.js and Go. I design backend services, event-driven architecture and scalable systems — five years shipping cash-handling telemetry, airline ticketing and real-time marketplaces.",
+    "homeTitle": "Quach Hoang Anh (Hayes) — Senior Software Engineer",
+    "blogTitle": "Engineering Notes",
+    "blogDescription": "Technical writing on backend architecture, Next.js and React in production, TypeScript, distributed systems and performance work — notes from systems Hayes has shipped and operated.",
+    "workTitle": "Case Studies & Engineering Work",
+    "workDescription": "Production systems Quach Hoang Anh (Hayes) has designed and shipped — problem, architecture, technology choices and measured impact for cash-handling telemetry, airline ticketing and real-time auction platforms."
+  },
+  "notFound": {
+    "eyebrow": "404 — not found",
+    "title": "This page doesn't exist.",
+    "description": "The link may be out of date. Try one of these instead.",
+    "home": "Homepage",
+    "work": "Case studies",
+    "blog": "Writing",
+    "contact": "Contact"
+  },
   "nav": {
     "about": "About",
     "experience": "Experience",
@@ -12,7 +30,7 @@
     "openMenu": "Open menu"
   },
   "hero": {
-    "eyebrow": "Senior Software Engineer · Da Nang, Vietnam",
+    "eyebrow": "Quach Hoang Anh (Hayes) · Senior Software Engineer",
     "headline": "Building software that survives scale.",
     "viewWork": "View My Work",
     "downloadResume": "Download Resume",
@@ -43,7 +61,8 @@
     "architecture": "Architecture",
     "techStack": "Tech stack",
     "impact": "Impact",
-    "caseStudy": "Read the case study"
+    "caseStudy": "Read the case study",
+    "allWork": "All case studies"
   },
   "expertise": {
     "eyebrow": "Technical Expertise",

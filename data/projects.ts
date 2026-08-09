@@ -2,9 +2,15 @@ import { Project } from '@/types'
 
 export const projects: Project[] = [
   {
+    slug: 'ubiqular-inform-cash-handling-telemetry',
     tag: 'GLORY SOFTWARE · CASH HANDLING',
     title: 'UBIQULAR Inform',
     meta: 'NestJS · Kafka · MQTT · PostgreSQL',
+    summary:
+      'Operator telemetry for a fleet of cash-handling machines: MQTT ingestion into Kafka, NestJS consumers, PostgreSQL read models — and a 30–50% cut in API response time.',
+    company: 'Glory Software Vietnam',
+    role: 'Senior Software Engineer · Sub-team Lead',
+    period: '03/2025 — 03/2026',
     problem:
       'Cash-handling machines in the field emit a constant stream of device, inventory and fault telemetry. Operators needed one view of what was happening across the estate, and the query paths behind that view were too slow to sit in front of a dashboard.',
     solution:
@@ -23,9 +29,15 @@ export const projects: Project[] = [
     ],
   },
   {
+    slug: 'airdata-airline-ticketing-platform',
     tag: 'AIRDATA · AIRLINE TICKETING',
     title: 'Agency & retail ticket platform',
     meta: 'Microservices · Keycloak · ELK · LangChain',
+    summary:
+      "Agency and retail ticketing on Vietnam's leading airline platform: legacy SOAP wrapped in typed services, Keycloak as one identity layer, LangChain cutting 25% of manual agent time.",
+    company: 'Airdata',
+    role: 'Full-Stack Engineer',
+    period: '07/2023 — 02/2025',
     problem:
       'Two ticket-selling products — agency and retail — sat on top of legacy airline and rail APIs speaking SOAP. Auth was inconsistent across services, the frontend shipped too much JavaScript, and agents spent hours re-keying ticket data by hand.',
     solution:
@@ -44,9 +56,15 @@ export const projects: Project[] = [
     ],
   },
   {
+    slug: 'timart-realtime-auction-platform',
     tag: 'AIARACORP · KOREAN MARKET',
     title: 'TIMART live auction',
     meta: 'NextJS · Redux · Agora · AWS ECR',
+    summary:
+      'A real-time, map-driven commerce auction for the Korean market: Next.js and Redux holding contended bid state, Agora chat and FCM push, shipped on a rollback-safe AWS ECR pipeline.',
+    company: 'AIARACORP',
+    role: 'Full-Stack Engineer',
+    period: '08/2024 — 02/2025',
     problem:
       'A commerce auction where several buyers compete for the same goods in real time, on a map-driven interface, for a Korean client with a hard launch date. Contention had to resolve correctly and the release path had to be reversible.',
     solution:
@@ -64,3 +82,12 @@ export const projects: Project[] = [
     ],
   },
 ]
+
+export function getProject(slug: string) {
+  return projects.find((project) => project.slug === slug)
+}
+
+/** Sibling projects, for the "related work" strip on a project page. */
+export function getRelatedProjects(slug: string) {
+  return projects.filter((project) => project.slug !== slug)
+}

@@ -1,17 +1,23 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { getBlogPost, getBlogPosts } from '@/lib/content'
+import { ArrowUpRight, CalendarDays, Clock } from 'lucide-react'
+import { setRequestLocale } from 'next-intl/server'
+
+import { Link } from '@/i18n/navigation'
+import { getBlogPost, getBlogPosts, getRelatedPosts } from '@/lib/content'
 import { Badge } from '@/components/ui/badge'
 import { SiteHeader } from '@/components/layout/site-header'
 import { Footer } from '@/components/layout/footer'
-import { ArrowLeft, CalendarDays, Clock } from 'lucide-react'
+import { BackgroundGlow } from '@/components/layout/background-glow'
 import { MDXRemote } from '@/components/mdx-remote'
-import { localeAlternates } from '@/lib/metadata'
+import { JsonLd } from '@/components/json-ld'
+import { Breadcrumbs } from '@/components/breadcrumbs'
+import { buildPageMetadata } from '@/lib/metadata'
+import { articleSchema, breadcrumbSchema } from '@/lib/schema'
+import { profile } from '@/data/profile'
 
-export async function generateStaticParams() {
-  const posts = getBlogPosts()
-  return posts.map((post) => ({ slug: post.slug }))
+export function generateStaticParams() {
+  return getBlogPosts().map((post) => ({ slug: post.slug }))
 }
 
 export async function generateMetadata({
@@ -21,71 +27,151 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = await params
   const post = getBlogPost(slug)
-  if (!post) return {}
-  return {
+
+  // A missing or unpublished post must not inherit the layout's indexable
+  // defaults while the route renders a 404.
+  if (!post) return { title: 'Not found', robots: { index: false, follow: false } }
+
+  return buildPageMetadata({
+    locale,
+    path: `/blog/${slug}`,
     title: post.meta.title,
     description: post.meta.description,
-    openGraph: {
-      title: post.meta.title,
-      description: post.meta.description,
-      type: 'article',
-      publishedTime: post.meta.date,
-      tags: post.meta.tags,
-    },
-    alternates: localeAlternates(locale, `/blog/${slug}`),
-  }
+    type: 'article',
+    publishedTime: post.meta.date,
+    tags: post.meta.tags,
+    generatedImage: true,
+  })
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>
+}) {
+  const { locale, slug } = await params
+  setRequestLocale(locale)
+
   const post = getBlogPost(slug)
   if (!post) notFound()
 
-  return (
-    <>
-      <SiteHeader />
-      <main id="top">
-        <article className="mx-auto max-w-3xl px-6 pt-32 pb-20">
-          <Link
-            href="/blog"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to blog
-          </Link>
+  const related = getRelatedPosts(slug, post.meta.tags)
 
-          <header className="mb-10">
-            <h1 className="text-4xl font-bold tracking-tight mb-4">{post.meta.title}</h1>
-            <p className="text-lg text-muted-foreground mb-4">{post.meta.description}</p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <CalendarDays className="h-4 w-4" />
-                {new Date(post.meta.date).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+  return (
+    <div className="relative overflow-x-clip">
+      <JsonLd
+        schema={[
+          breadcrumbSchema(locale, [
+            { name: 'Home', path: '' },
+            { name: 'Blog', path: '/blog' },
+            { name: post.meta.title, path: `/blog/${slug}` },
+          ]),
+          articleSchema({
+            locale,
+            path: `/blog/${slug}`,
+            headline: post.meta.title,
+            description: post.meta.description,
+            datePublished: post.meta.date,
+            keywords: post.meta.tags,
+          }),
+        ]}
+      />
+      <BackgroundGlow />
+      <SiteHeader />
+
+      <main id="top" className="relative z-1">
+        <article className="mx-auto max-w-3xl px-6 pt-16 pb-20 lg:pt-24">
+          <Breadcrumbs
+            trail={[
+              { label: 'Home', href: '/' },
+              { label: 'Blog', href: '/blog' },
+              { label: post.meta.title },
+            ]}
+          />
+
+          <header className="mt-8 mb-10">
+            <h1 className="font-heading text-4xl font-semibold tracking-[-0.03em] text-balance">
+              {post.meta.title}
+            </h1>
+            <p className="mt-4 text-lg leading-[1.6] text-dim text-pretty">
+              {post.meta.description}
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center gap-4 font-mono text-xs text-faint">
+              {/* Named author on the byline, matching the `author` node in the
+                  BlogPosting schema — the E-E-A-T signal Google looks for on
+                  technical writing. */}
+              <span>{profile.name}</span>
+              <span className="flex items-center gap-1.5">
+                <CalendarDays className="size-3.5" />
+                <time dateTime={post.meta.date}>
+                  {new Date(post.meta.date).toLocaleDateString(locale, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
               </span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
+              <span className="flex items-center gap-1.5">
+                <Clock className="size-3.5" />
                 {post.meta.readingTime} min read
               </span>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
+
+            <ul className="mt-4 flex flex-wrap gap-2">
               {post.meta.tags.map((tag: string) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
+                <li key={tag}>
+                  <Badge variant="secondary">{tag}</Badge>
+                </li>
               ))}
-            </div>
+            </ul>
           </header>
 
           <div className="prose prose-neutral dark:prose-invert max-w-none">
             <MDXRemote source={post.content} />
           </div>
+
+          <footer className="mt-16 border-t border-hairline pt-10">
+            {related.length > 0 && (
+              <>
+                <h2 className="font-mono text-[0.69rem] tracking-[0.16em] text-faint uppercase">
+                  Related reading
+                </h2>
+                <ul className="mt-4 flex flex-col gap-3">
+                  {related.map((other) => (
+                    <li key={other.slug}>
+                      <Link
+                        href={`/blog/${other.slug}`}
+                        className="inline-flex items-start gap-1.5 text-sm font-medium text-brand-cyan transition-colors hover:text-brand-violet"
+                      >
+                        {other.title}
+                        <ArrowUpRight className="size-4 flex-none translate-y-0.5" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <div className="mt-8 flex flex-wrap gap-6 text-sm">
+              <Link
+                href="/blog"
+                className="text-dim transition-colors hover:text-foreground"
+              >
+                All writing
+              </Link>
+              <Link href="/work" className="text-dim transition-colors hover:text-foreground">
+                Case studies
+              </Link>
+              <Link href="/#contact" className="text-dim transition-colors hover:text-foreground">
+                Get in touch
+              </Link>
+            </div>
+          </footer>
         </article>
       </main>
+
       <Footer />
-    </>
+    </div>
   )
 }

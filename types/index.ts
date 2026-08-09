@@ -53,17 +53,25 @@ export interface ArchitectureNode {
 }
 
 export interface Project {
+  /** URL segment under /work — the project's own indexable page. */
+  slug: string
   /** Uppercase kicker, e.g. "GLORY SOFTWARE · CASH HANDLING". */
   tag: string
   title: string
   /** Mono meta line, e.g. "NestJS · Kafka · MQTT · PostgreSQL". */
   meta: string
+  /** ~155 chars, used verbatim as the project page's meta description. */
+  summary: string
+  /** Employer the work was done for; matches `Experience.company`. */
+  company: string
+  /** Title held on this project; matches the corresponding `Experience.role`. */
+  role: string
+  period: string
   problem: string
   solution: string
   nodes: ArchitectureNode[]
   techStack: string[]
   impact: Stat[]
-  caseStudyUrl?: string
   liveUrl?: string
   githubUrl?: string
 }

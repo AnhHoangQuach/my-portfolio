@@ -47,6 +47,11 @@ export function getBlogPost(slug: string) {
   const { data, content } = matter(raw)
   const stats = readingTime(content)
 
+  // A draft must 404, not merely drop out of the listing. It used to render at
+  // its own URL — reachable by anyone with the link, and indexable the moment
+  // one of them shared it.
+  if (data.published === false) return null
+
   return {
     meta: {
       slug,
@@ -94,6 +99,9 @@ export function getCaseStudy(slug: string) {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const { data, content } = matter(raw)
 
+  // Same rule as blog drafts: unpublished means unreachable, not just unlisted.
+  if (data.published === false) return null
+
   return {
     meta: {
       slug,
@@ -108,4 +116,19 @@ export function getCaseStudy(slug: string) {
     } satisfies CaseStudy,
     content,
   }
+}
+
+/**
+ * Posts sharing at least one tag with `slug`, most overlap first. Powers the
+ * "related reading" links, which is how a blog post stops being a leaf node in
+ * the crawl graph.
+ */
+export function getRelatedPosts(slug: string, tags: string[], limit = 3): BlogPost[] {
+  return getBlogPosts()
+    .filter((post) => post.slug !== slug)
+    .map((post) => ({ post, overlap: post.tags.filter((tag) => tags.includes(tag)).length }))
+    .filter((entry) => entry.overlap > 0)
+    .sort((a, b) => b.overlap - a.overlap)
+    .slice(0, limit)
+    .map((entry) => entry.post)
 }
