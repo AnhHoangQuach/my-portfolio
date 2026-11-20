@@ -17,6 +17,11 @@ export interface WorldStrings {
     hint: string
     journey: string
     switchLocale: string
+    /** Time-of-day control. */
+    timeOfDay: string
+    daNang: string
+    day: string
+    night: string
     localeLabel: string
   }
   panel: { back: string; next: string; previous: string; stop: string }

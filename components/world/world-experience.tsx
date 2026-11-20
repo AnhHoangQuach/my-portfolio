@@ -9,7 +9,9 @@ import {
   type LandmarkId,
   type SectionId,
 } from '@/lib/world/landmarks'
+import { DAY_HOUR, NIGHT_HOUR, parseTimeParam } from '@/lib/world/daylight'
 import { useWorld } from '@/lib/world/store'
+import { TIME_MODE_KEY } from './ui/hud'
 import { useReducedMotion } from '@/components/use-reduced-motion'
 import { Hud } from './ui/hud'
 import { InfoPanel } from './ui/info-panel'
@@ -84,10 +86,25 @@ export function WorldExperience({
 }) {
   const reduced = useReducedMotion()
   const webgl = useSyncExternalStore<boolean | null>(noSubscribe, hasWebGL, () => null)
+  const night = useWorld((s) => s.nightUi)
 
   useEffect(() => {
     useWorld.getState().setReducedMotion(reduced)
   }, [reduced])
+
+  // Time of day: `?time=day|night|HH:MM` wins, then the remembered choice,
+  // else the live clock in Da Nang.
+  useEffect(() => {
+    const fromUrl = parseTimeParam(new URLSearchParams(window.location.search).get('time'))
+    let saved: string | null = null
+    try {
+      saved = window.localStorage.getItem(TIME_MODE_KEY)
+    } catch {
+      saved = null
+    }
+    const hour = fromUrl ?? (saved === 'day' ? DAY_HOUR : saved === 'night' ? NIGHT_HOUR : null)
+    useWorld.getState().setTimeOverride(hour)
+  }, [])
 
   // `/?at=contact` (from the blog, case studies, 404…) opens that landmark
   // directly. Read on the client so the page itself stays statically rendered.
@@ -129,7 +146,7 @@ export function WorldExperience({
   const fallback = <Fallback strings={strings} />
 
   return (
-    <div className="world-root fixed inset-0 overflow-hidden">
+    <div className="world-root fixed inset-0 overflow-hidden" data-night={night || undefined}>
       {webgl === false ? (
         fallback
       ) : webgl ? (

@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
+import { daylight } from '@/lib/world/daylight'
 import { hillHeight, ribbonGeometry, resample, type XZ } from '@/lib/world/geo'
 import { blockOnLand, layout, roads } from '@/lib/world/layout'
 import { StaticInstances } from './instanced'
@@ -68,9 +69,10 @@ function createAsphaltMaterial() {
   return m
 }
 
-/** Light posts along the main roads, both sides, one instanced draw per part. */
+/** Light posts along the main roads, both sides, plus where their light lands. */
 function streetLights() {
   const posts: [number, number, number][] = []
+  const pools: [number, number, number][] = []
   for (const r of roads) {
     if (r.kind !== 'road') continue
     const pts = resample(r.line, 3.2)
@@ -84,10 +86,63 @@ function streetLights() {
       for (const side of [-1, 1]) {
         if (Math.hypot(x, z) > 140) continue
         posts.push([x - (dz / len) * off * side, 0, z + (dx / len) * off * side])
+        // The pool falls just inside the kerb, on the carriageway.
+        const pool = off - 0.55
+        pools.push([x - (dz / len) * pool * side, 0.045, z + (dx / len) * pool * side])
       }
     })
   }
-  return posts
+  return { posts, pools }
+}
+
+/** Lamp heads: plain metal by day, glowing (HDR, so bloom catches it) at night. */
+function createLampMaterial() {
+  const m = new THREE.MeshLambertMaterial({ color: '#6d7074' })
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uNight = daylight.night
+    shader.uniforms.uLamp = { value: new THREE.Color('#ffd28a').multiplyScalar(3.4) }
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uNight;\nuniform vec3 uLamp;')
+      .replace(
+        '#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uLamp * uNight;',
+      )
+  }
+  m.customProgramCacheKey = () => 'world-lamp'
+  return m
+}
+
+/**
+ * Pools of warm light on the road under each lamp: additive radial discs in
+ * one instanced draw, faded in with the night. Hundreds of real lights would
+ * be unaffordable; this reads the same from street level up.
+ */
+function createLightPoolMaterial() {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    uniforms: { uNight: daylight.night, uColor: { value: new THREE.Color('#ffb860') } },
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform float uNight;
+      uniform vec3 uColor;
+      varying vec2 vUv;
+      void main() {
+        float d = length(vUv - 0.5) * 2.0;
+        float a = (1.0 - smoothstep(0.0, 1.0, d));
+        gl_FragColor = vec4(uColor * a * a * 0.38 * uNight, 1.0);
+      }
+    `,
+  })
 }
 
 /**
@@ -96,7 +151,7 @@ function streetLights() {
  * handful of draw calls.
  */
 export function Roads() {
-  const { asphalt, sidewalk, promenade, plinths, parks, mountain, lights } = useMemo(() => {
+  const { asphalt, sidewalk, promenade, plinths, parks, mountain, lights, pools } = useMemo(() => {
     const flat = () => 0.03
     const main = roads.filter((r) => r.kind === 'road')
     const road = main.map((r) => ribbonGeometry(r.line, r.width, () => 0.034))
@@ -126,7 +181,17 @@ export function Roads() {
       plinths: strip(pads),
       parks: strip(greens),
       mountain: ribbonGeometry(SON_TRA_ROAD, 0.7, (x, z) => hillHeight(x, z) + 0.06),
-      lights: streetLights().map((position) => ({ position })),
+      ...(() => {
+        const { posts, pools } = streetLights()
+        return {
+          lights: posts.map((position) => ({ position })),
+          pools: pools.map((position) => ({
+            position,
+            rotation: [-Math.PI / 2, 0, 0] as [number, number, number],
+            scale: 2.2,
+          })),
+        }
+      })(),
     }
   }, [])
 
@@ -134,6 +199,9 @@ export function Roads() {
   const poleGeometry = useMemo(() => new THREE.CylinderGeometry(0.018, 0.024, 0.75, 5).translate(0, 0.375, 0), [])
   const lampGeometry = useMemo(() => new THREE.BoxGeometry(0.16, 0.04, 0.06).translate(0, 0.76, 0), [])
   const poleMaterial = useMemo(() => new THREE.MeshLambertMaterial({ color: '#6d7074' }), [])
+  const lampMaterial = useMemo(() => createLampMaterial(), [])
+  const poolMaterial = useMemo(() => createLightPoolMaterial(), [])
+  const poolGeometry = useMemo(() => new THREE.PlaneGeometry(1, 1), [])
 
   return (
     <group>
@@ -160,7 +228,8 @@ export function Roads() {
       )}
       <mesh geometry={mountain} material={asphaltMaterial} receiveShadow />
       <StaticInstances geometry={poleGeometry} material={poleMaterial} items={lights} castShadow />
-      <StaticInstances geometry={lampGeometry} material={poleMaterial} items={lights} />
+      <StaticInstances geometry={lampGeometry} material={lampMaterial} items={lights} />
+      <StaticInstances geometry={poolGeometry} material={poolMaterial} items={pools} />
     </group>
   )
 }

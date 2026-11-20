@@ -3,62 +3,12 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { Sky as SkyImpl } from 'three/examples/jsm/objects/Sky.js'
 
 import { rng } from '@/lib/world/geo'
-import { SUN_DIRECTION, SUN_POSITION, getGlowTexture } from '@/lib/world/materials'
-import { QUALITY, type Quality } from '@/lib/world/quality'
+import { daylight } from '@/lib/world/daylight'
+import { getGlowTexture } from '@/lib/world/materials'
+import type { Quality } from '@/lib/world/quality'
 import { useWorld } from '@/lib/world/store'
-
-/* ------------------------------------------------------------------------ */
-/* Sky + light                                                               */
-/* ------------------------------------------------------------------------ */
-
-/**
- * Physically based daylight sky (Preetham: Rayleigh + Mie scattering) with the
- * sun where the key light is. Procedural, so nothing is downloaded.
- */
-export function Sky() {
-  const sky = useMemo(() => {
-    const s = new SkyImpl()
-    // Inside the camera's far plane, outside everything else.
-    s.scale.setScalar(1200)
-    const u = s.material.uniforms
-    u.turbidity.value = 2.6
-    u.rayleigh.value = 2.1
-    u.mieCoefficient.value = 0.003
-    u.mieDirectionalG.value = 0.8
-    u.sunPosition.value.copy(SUN_DIRECTION)
-    return s
-  }, [])
-  return <primitive object={sky} />
-}
-
-export function Lights({ quality }: { quality: Quality }) {
-  const size = QUALITY[quality].shadowMap
-  return (
-    <>
-      <hemisphereLight args={['#cfe0ef', '#5d5442', 1.25]} />
-      {/* Keyed on quality: a shadow map is allocated once, so a new size needs a new light. */}
-      <directionalLight
-        key={quality}
-        castShadow
-        position={SUN_POSITION}
-        intensity={3.1}
-        color="#fff1dc"
-        shadow-mapSize={[size, size]}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.04}
-        shadow-camera-left={-72}
-        shadow-camera-right={72}
-        shadow-camera-top={72}
-        shadow-camera-bottom={-72}
-        shadow-camera-near={1}
-        shadow-camera-far={240}
-      />
-    </>
-  )
-}
 
 /* ------------------------------------------------------------------------ */
 /* Clouds                                                                    */
@@ -70,13 +20,13 @@ export function Lights({ quality }: { quality: Quality }) {
  * intro falls *through* the cloud bank) and takes the scene's haze.
  */
 function createCloudMaterial(opacity: number) {
-  return new THREE.ShaderMaterial({
+  const material = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     fog: true,
     uniforms: THREE.UniformsUtils.merge([
       THREE.UniformsLib.fog,
-      { uOpacity: { value: opacity } },
+      { uOpacity: { value: opacity }, uNight: daylight.night },
     ]),
     vertexShader: /* glsl */ `
       #include <common>
@@ -107,6 +57,7 @@ function createCloudMaterial(opacity: number) {
       #include <common>
       #include <fog_pars_fragment>
       uniform float uOpacity;
+      uniform float uNight;
       varying vec2 vUv;
       varying float vDist;
       varying float vSeed;
@@ -116,6 +67,7 @@ function createCloudMaterial(opacity: number) {
         float body = 1.0 - smoothstep(0.35, 1.0, d);
         float lit = mix(0.88, 1.04, smoothstep(0.15, 0.85, vUv.y));
         vec3 col = vec3(lit) * mix(vec3(0.93, 0.95, 0.98), vec3(1.0, 0.98, 0.95), vSeed);
+        col *= mix(vec3(1.0), vec3(0.13, 0.15, 0.22), uNight);
         float alpha = body * uOpacity * smoothstep(6.0, 40.0, vDist);
         gl_FragColor = vec4(col, alpha);
         #include <tonemapping_fragment>
@@ -124,6 +76,9 @@ function createCloudMaterial(opacity: number) {
       }
     `,
   })
+  // `UniformsUtils.merge` clones, so point uNight back at the shared value.
+  material.uniforms.uNight = daylight.night
+  return material
 }
 
 interface Puff {
@@ -240,6 +195,7 @@ export function Mist({
       const sprite = child as THREE.Sprite
       const m = sprite.material as THREE.SpriteMaterial
       m.opacity = opacity * (0.7 + 0.3 * Math.sin(t * 0.35 + i * 1.7))
+      m.color.setScalar(1 - 0.78 * daylight.night.value)
       sprite.position.x = spots[i].x + Math.sin(t * 0.12 + i) * 0.6
     })
   })

@@ -21,6 +21,18 @@
     background: linear-gradient(180deg, #bfe3ef 0%, #fff0d6 100%);
   }
 
+  /* Night theme for the HUD and panels, switched with the scene's time of day. */
+  .world-root[data-night] {
+    --w-ink: #ece6da;
+    --w-ink-soft: #b4ab9c;
+    --w-paper: #1c2130;
+    --w-paper-2: #252b3c;
+    --w-wood: #c79d6f;
+    --w-wood-dark: #e3bd8f;
+    --w-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.6), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+    background: linear-gradient(180deg, #0c1322 0%, #1a2236 100%);
+  }
+
   /* Panels and chips: paper card with a thin wooden rim. */
   .world-card {
     background: color-mix(in oklab, var(--w-paper) 92%, transparent);

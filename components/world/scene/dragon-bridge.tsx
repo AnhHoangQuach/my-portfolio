@@ -6,6 +6,7 @@ import * as THREE from 'three'
 
 import { WORLD } from '@/lib/world/geo'
 import { riverRoadX } from '@/lib/world/layout'
+import { daylight } from '@/lib/world/daylight'
 import { glowColor } from '@/lib/world/materials'
 import { palette } from '@/lib/world/palette'
 import { useWorld } from '@/lib/world/store'
@@ -97,7 +98,9 @@ function DragonBridgeModel() {
       fireUntil.current = clock.elapsedTime + 3.2
     }
     const firing = clock.elapsedTime < fireUntil.current
-    const goal = firing ? 0.75 : s.hoveredId === 'dragon-bridge' ? 0.55 : 0.14
+    // Floodlit gold after dark, like the real bridge.
+    const base = 0.14 + 0.5 * daylight.night.value
+    const goal = firing ? 0.75 : s.hoveredId === 'dragon-bridge' ? Math.max(0.55, base) : base
     material.emissiveIntensity = THREE.MathUtils.damp(material.emissiveIntensity, goal, 5, delta)
   })
 

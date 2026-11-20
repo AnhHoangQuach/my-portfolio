@@ -49,7 +49,11 @@
       "hint": "Drag to orbit · Scroll or pinch to zoom · Tap a landmark · ← → to travel",
       "journey": "Journey",
       "switchLocale": "switch to 日本語",
-      "localeLabel": "EN"
+      "localeLabel": "EN",
+      "timeOfDay": "Time of day",
+      "daNang": "Da Nang",
+      "day": "Day",
+      "night": "Night"
     },
     "panel": {
       "back": "Back to World",

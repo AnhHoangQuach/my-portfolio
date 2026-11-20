@@ -13,7 +13,8 @@ import { QUALITY, detectQuality, forcedQuality, type Quality } from '@/lib/world
 import { useWorld } from '@/lib/world/store'
 import { CameraRig } from './camera-rig'
 import { LandmarkLabelsProvider, type LandmarkLabel } from './landmark'
-import { Clouds, Lights, Sky } from './scene/atmosphere'
+import { Clouds } from './scene/atmosphere'
+import { Daylight } from './scene/daylight'
 import { MyKheBeach } from './scene/beach'
 import { HanRiverBridge, LoveBridge, TranThiLyBridge } from './scene/bridges'
 import { CityCenter, EastBank, Greenery, Outskirts } from './scene/city'
@@ -134,9 +135,8 @@ export default function WorldCanvas({ labels }: { labels: Record<LandmarkId, Lan
       <LandmarkLabelsProvider value={labels}>
         <Suspense fallback={null}>
           <Clock />
-          <Sky />
+          <Daylight quality={quality} />
           <StudioEnvironment />
-          <Lights quality={quality} />
           <Clouds quality={quality} />
 
           <Terrain />

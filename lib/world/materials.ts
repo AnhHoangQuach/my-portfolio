@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 
 import { EAST_LAND, WEST_LAND, WORLD, type XZ } from './geo'
+import { daylight } from './daylight'
 import { palette } from './palette'
 
 /**
@@ -175,7 +176,9 @@ export function createBuildingMaterial() {
   m.onBeforeCompile = (shader) => {
     injectWorldPos(shader)
     shader.uniforms.uWindow = { value: new THREE.Color(palette.window) }
-    shader.uniforms.uSkyRefl = { value: new THREE.Color(palette.sky.horizon) }
+    // Glass reflects the live sky colour; windows light up after dusk.
+    shader.uniforms.uSkyRefl = daylight.skyHorizon
+    shader.uniforms.uNight = daylight.night
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vInst;\nvarying float vHeight;')
       .replace(
@@ -192,7 +195,7 @@ export function createBuildingMaterial() {
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
-        '#include <common>\nuniform vec3 uWindow;\nuniform vec3 uSkyRefl;\nvarying vec3 vInst;\nvarying float vHeight;',
+        '#include <common>\nuniform vec3 uWindow;\nuniform vec3 uSkyRefl;\nuniform float uNight;\nvarying vec3 vInst;\nvarying float vHeight;',
       )
       .replace(
         '#include <emissivemap_fragment>',
@@ -220,8 +223,13 @@ export function createBuildingMaterial() {
         vec3 V = normalize(vViewPosition);
         float fres = pow(1.0 - clamp(abs(dot(normal, V)), 0.0, 1.0), 3.0);
         totalEmissiveRadiance += uSkyRefl * glass * (0.05 + 0.55 * fres) * (0.6 + 0.4 * tower);
-        float lit = step(0.86, wHash(vec2(level, floor(u * 2.6)) + vInst.xz));
-        totalEmissiveRadiance += uWindow * glass * lit * 0.06 * (1.0 - tower);`,
+        // By day a few rooms are lit; after dusk about half the city is home,
+        // towers included. HDR (> 1.5) at night so bloom picks the windows out.
+        float roomSeed = wHash(vec2(level, floor(u * 2.6)) + vInst.xz);
+        float lit = step(mix(0.86, 0.5, uNight), roomSeed);
+        float warmth = mix(0.85, 1.15, wHash(vec2(roomSeed, level)));
+        float strength = mix(0.06 * (1.0 - tower), 2.3 * warmth, uNight);
+        totalEmissiveRadiance += uWindow * glass * lit * strength;`,
       )
   }
   m.customProgramCacheKey = () => 'world-building'
@@ -364,6 +372,7 @@ export function createWaterMaterial() {
       uniform vec3 uSkyHorizon;
       uniform vec3 uSunDir;
       uniform vec3 uSunColor;
+      uniform float uNight;
       varying vec3 vWPos;
       ${NOISE_GLSL}
       void main() {
@@ -391,6 +400,9 @@ export function createWaterMaterial() {
         foam += smoothstep(0.42, 0.6, edge);
         col = mix(col, uFoam, clamp(foam, 0.0, 1.0) * 0.55);
 
+        // Night: the water goes dark, so reflections and the moon carry it.
+        col *= mix(1.0, 0.14, pow(uNight, 1.5));
+
         // Ripple normal from the noise gradient, for reflections and glints.
         vec2 rp = vWPos.xz * 0.9 + vec2(uTime * 0.25, uTime * 0.18);
         float e = 0.08;
@@ -414,8 +426,14 @@ export function createWaterMaterial() {
       }
     `,
   })
-  // `UniformsUtils.merge` clones; re-point time at the shared uniform.
+  // `UniformsUtils.merge` clones; re-point the time-driven uniforms at the
+  // shared objects so the sea follows the clock and the time of day.
   material.uniforms.uTime = timeUniform
+  material.uniforms.uSunDir = daylight.sunDir
+  material.uniforms.uSunColor = daylight.sunColor
+  material.uniforms.uSkyTop = daylight.skyTop
+  material.uniforms.uSkyHorizon = daylight.skyHorizon
+  material.uniforms.uNight = daylight.night
   material.uniforms.uShore.value = shore
   return material
 }

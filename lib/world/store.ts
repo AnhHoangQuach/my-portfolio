@@ -34,6 +34,13 @@ interface WorldState {
   reducedMotion: boolean
   /** Landmark requested by the URL (`/?at=contact`); opened as soon as the scene is ready. */
   deepLink: LandmarkId | null
+  /**
+   * Time of day. `null` follows the real clock in Da Nang; a number pins the
+   * hour (the Day / Night override, or `?time=` in the URL).
+   */
+  timeOverride: number | null
+  /** True once it is dark enough for the UI to switch to its night theme. */
+  nightUi: boolean
 
   setLoadStage: (stage: number) => void
   /** Called once the scene has rendered its first frames. */
@@ -49,6 +56,8 @@ interface WorldState {
   breatheFire: () => void
   setReducedMotion: (value: boolean) => void
   setDeepLink: (id: LandmarkId | null) => void
+  setTimeOverride: (hour: number | null) => void
+  setNightUi: (value: boolean) => void
 }
 
 let nonce = 0
@@ -64,6 +73,8 @@ export const useWorld = create<WorldState>()((set, get) => ({
   fireNonce: 0,
   reducedMotion: false,
   deepLink: null,
+  timeOverride: null,
+  nightUi: false,
 
   setLoadStage: (stage) => set((s) => ({ loadStage: Math.max(s.loadStage, stage) })),
 
@@ -130,4 +141,10 @@ export const useWorld = create<WorldState>()((set, get) => ({
   setReducedMotion: (value) => set({ reducedMotion: value }),
 
   setDeepLink: (id) => set({ deepLink: id }),
+
+  setTimeOverride: (hour) => set({ timeOverride: hour }),
+
+  setNightUi: (value) => {
+    if (get().nightUi !== value) set({ nightUi: value })
+  },
 }))

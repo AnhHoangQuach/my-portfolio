@@ -73,6 +73,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       hint: t('hud.hint'),
       journey: t('hud.journey'),
       switchLocale: t('hud.switchLocale'),
+      timeOfDay: t('hud.timeOfDay'),
+      daNang: t('hud.daNang'),
+      day: t('hud.day'),
+      night: t('hud.night'),
       localeLabel: t('hud.localeLabel'),
     },
     panel: {

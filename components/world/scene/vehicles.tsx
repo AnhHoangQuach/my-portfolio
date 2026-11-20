@@ -3,7 +3,9 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
+import { daylight } from '@/lib/world/daylight'
 import { WORLD, riverSamples, rng, type XZ } from '@/lib/world/geo'
 import { BRIDGES, riverRoadX, roads } from '@/lib/world/layout'
 import { palette } from '@/lib/world/palette'
@@ -87,6 +89,20 @@ interface Vehicle {
   rider: string
 }
 
+/** Small light blocks, each [x, y, z, colour, HDR strength], merged with vertex colours. */
+function lightsGeometry(parts: [number, number, number, string, number][]) {
+  const geoms = parts.map(([x, y, z, hex, k]) => {
+    const g = new THREE.BoxGeometry(0.03, 0.035, 0.05).toNonIndexed()
+    g.translate(x, y, z)
+    const c = new THREE.Color(hex).multiplyScalar(k)
+    const colors = new Float32Array(g.getAttribute('position').count * 3)
+    for (let i = 0; i < colors.length; i += 3) colors.set([c.r, c.g, c.b], i)
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+    return g
+  })
+  return mergeGeometries(geoms)!
+}
+
 /** Lines traffic drives on: every road plus the three bridge spans. */
 function trafficLines(): { line: XZ[]; width: number }[] {
   const lines = roads.filter((rd) => rd.kind === 'road').map((rd) => ({ line: rd.line, width: rd.width }))
@@ -143,9 +159,22 @@ export function Cars() {
       carCabin: new THREE.BoxGeometry(0.28, 0.12, 0.21).translate(-0.03, 0.24, 0),
       bikeBody: new THREE.BoxGeometry(0.2, 0.07, 0.055).translate(0, 0.07, 0),
       bikeRider: new THREE.BoxGeometry(0.07, 0.15, 0.07).translate(-0.02, 0.17, 0),
+      // Two headlights and two tail lights, coloured per vertex (HDR).
+      carLights: lightsGeometry([
+        [0.255, 0.12, 0.08, '#fff2d6', 3],
+        [0.255, 0.12, -0.08, '#fff2d6', 3],
+        [-0.255, 0.13, 0.08, '#ff2a1a', 2.2],
+        [-0.255, 0.13, -0.08, '#ff2a1a', 2.2],
+      ]),
+      bikeLights: lightsGeometry([
+        [0.105, 0.1, 0, '#fff2d6', 3],
+        [-0.105, 0.1, 0, '#ff2a1a', 2],
+      ]),
     }),
     [],
   )
+  const carLights = useRef<THREE.InstancedMesh>(null)
+  const bikeLights = useRef<THREE.InstancedMesh>(null)
   /**
    * Per-frame state lives here, created on the first frame: distance along
    * the lane and a segment-index cache (progress is monotonic, so lookups
@@ -159,9 +188,23 @@ export function Cars() {
   } | null>(null)
 
   useFrame((_, delta) => {
-    const meshes = [carBody.current, carCabin.current, bikeBody.current, bikeRider.current]
+    const meshes = [
+      carBody.current,
+      carCabin.current,
+      bikeBody.current,
+      bikeRider.current,
+      carLights.current,
+      bikeLights.current,
+    ]
     if (meshes.some((m) => !m)) return
-    const [cb, cc, bb, br] = meshes as THREE.InstancedMesh[]
+    const [cb, cc, bb, br, cl, bl] = meshes as THREE.InstancedMesh[]
+    // Lights fade in after dusk and are skipped entirely by day.
+    const night = daylight.night.value
+    const lightsOn = night > 0.04
+    for (const m of [cl, bl]) {
+      m.visible = lightsOn
+      ;(m.material as THREE.MeshBasicMaterial).color.setScalar(night)
+    }
     const init = (list: Vehicle[]) => ({
       list,
       s: Float32Array.from(list, (v) => v.start),
@@ -175,6 +218,7 @@ export function Cars() {
       st: { list: Vehicle[]; s: Float32Array; seg: Int32Array },
       body: THREE.InstancedMesh,
       top: THREE.InstancedMesh,
+      lamps: THREE.InstancedMesh,
     ) => {
       st.list.forEach((v, i) => {
         const L = v.lane
@@ -195,6 +239,7 @@ export function Cars() {
         d.updateMatrix()
         body.setMatrixAt(i, d.matrix)
         top.setMatrixAt(i, d.matrix)
+        if (lightsOn) lamps.setMatrixAt(i, d.matrix)
         if (!state.colored) {
           body.setColorAt(i, new THREE.Color(v.color))
           top.setColorAt(i, new THREE.Color(v.bike ? v.rider : '#1d2227'))
@@ -202,9 +247,10 @@ export function Cars() {
       })
       body.instanceMatrix.needsUpdate = true
       top.instanceMatrix.needsUpdate = true
+      if (lightsOn) lamps.instanceMatrix.needsUpdate = true
     }
-    place(state.cars, cb, cc)
-    place(state.bikes, bb, br)
+    place(state.cars, cb, cc, cl)
+    place(state.bikes, bb, br, bl)
     if (!state.colored) {
       state.colored = true
       for (const m of [cb, cc, bb, br]) if (m.instanceColor) m.instanceColor.needsUpdate = true
@@ -224,6 +270,12 @@ export function Cars() {
       </instancedMesh>
       <instancedMesh ref={bikeRider} args={[geo.bikeRider, undefined, bikes.length]} frustumCulled={false}>
         <meshLambertMaterial />
+      </instancedMesh>
+      <instancedMesh ref={carLights} args={[geo.carLights, undefined, cars.length]} frustumCulled={false} visible={false}>
+        <meshBasicMaterial vertexColors />
+      </instancedMesh>
+      <instancedMesh ref={bikeLights} args={[geo.bikeLights, undefined, bikes.length]} frustumCulled={false} visible={false}>
+        <meshBasicMaterial vertexColors />
       </instancedMesh>
     </group>
   )

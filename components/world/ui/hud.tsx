@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Globe, LocateFixed, Menu, MousePointerClick, X } from 'lucide-react'
+import { Clock, Globe, LocateFixed, Menu, Moon, MousePointerClick, Sun, X } from 'lucide-react'
 
 import { usePathname, useRouter } from '@/i18n/navigation'
+import { DAY_HOUR, NIGHT_HOUR, daNangHour, formatHour } from '@/lib/world/daylight'
 import { LANDMARKS, LANDMARK_ORDER } from '@/lib/world/landmarks'
 import { useWorld } from '@/lib/world/store'
 import { cn } from '@/lib/utils'
@@ -57,6 +58,57 @@ function IdentityBadge({ strings }: { strings: WorldStrings }) {
   )
 }
 
+/** Remembered across visits; storage can be unavailable, so every access is guarded. */
+export const TIME_MODE_KEY = 'world-time-mode'
+
+/**
+ * Time of day: Auto follows the real clock in Da Nang (shown live), then the
+ * fixed Day and Night overrides. Click cycles Auto → Day → Night → Auto.
+ */
+function TimeToggle({ strings }: { strings: WorldStrings }) {
+  const override = useWorld((s) => s.timeOverride)
+  const setOverride = useWorld((s) => s.setTimeOverride)
+  const [now, setNow] = useState(() => formatHour(daNangHour()))
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(formatHour(daNangHour())), 20000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  const mode = override === null ? 'auto' : override === DAY_HOUR ? 'day' : override === NIGHT_HOUR ? 'night' : 'custom'
+  // A pinned custom hour (e.g. `?time=18:05`) shows that hour, not the clock.
+  const label =
+    mode === 'day'
+      ? strings.hud.day
+      : mode === 'night'
+        ? strings.hud.night
+        : `${strings.hud.daNang} ${override === null ? now : formatHour(override)}`
+  const Icon = mode === 'day' ? Sun : mode === 'night' ? Moon : Clock
+
+  const cycle = () => {
+    const next = mode === 'auto' ? 'day' : mode === 'day' ? 'night' : 'auto'
+    setOverride(next === 'day' ? DAY_HOUR : next === 'night' ? NIGHT_HOUR : null)
+    try {
+      window.localStorage.setItem(TIME_MODE_KEY, next)
+    } catch {
+      // Private mode or blocked storage: the choice just won't persist.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={cycle}
+      className="world-btn world-btn-ghost px-3 py-1.5 text-xs tabular-nums"
+      aria-label={`${strings.hud.timeOfDay}: ${label}`}
+      title={strings.hud.timeOfDay}
+    >
+      <Icon className="size-3.5" aria-hidden />
+      {label}
+    </button>
+  )
+}
+
 function LocaleToggle({ strings, locale }: { strings: WorldStrings; locale: string }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -100,6 +152,7 @@ function TopMenu({ strings, locale }: { strings: WorldStrings; locale: string })
           </button>
         ))}
         <span className="mx-1 h-5 w-px bg-(--w-wood)/30" aria-hidden />
+        <TimeToggle strings={strings} />
         <LocaleToggle strings={strings} locale={locale} />
       </div>
 
@@ -144,7 +197,10 @@ function TopMenu({ strings, locale }: { strings: WorldStrings; locale: string })
               ))}
             </ul>
             <div className="mt-2 flex items-center justify-between border-t border-(--w-wood)/20 px-2 pt-2">
-              <LocaleToggle strings={strings} locale={locale} />
+              <span className="flex items-center gap-2">
+                <TimeToggle strings={strings} />
+                <LocaleToggle strings={strings} locale={locale} />
+              </span>
             </div>
           </div>
         )}

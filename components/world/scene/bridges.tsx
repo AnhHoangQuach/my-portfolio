@@ -6,6 +6,7 @@ import * as THREE from 'three'
 
 import { WORLD, riverAtZ } from '@/lib/world/geo'
 import { BRIDGES, riverRoadX } from '@/lib/world/layout'
+import { daylight } from '@/lib/world/daylight'
 import { glowColor } from '@/lib/world/materials'
 import { palette } from '@/lib/world/palette'
 import { HoverOutline, Landmark } from '../landmark'
@@ -85,8 +86,9 @@ function LoveBridgeModel() {
     const t = clock.elapsedTime
     // The heart material is shared, so pulsing it through one mesh pulses all hearts.
     const m = arch.current?.material as THREE.MeshLambertMaterial | undefined
-    if (m) m.emissiveIntensity = 0.4 + 0.25 * Math.sin(t * 2.4)
-    if (glow.current) glow.current.intensity = 5 + Math.sin(t * 2.4) * 1.2
+    const night = daylight.night.value
+    if (m) m.emissiveIntensity = (0.4 + 0.25 * Math.sin(t * 2.4)) * (1 + 1.6 * night)
+    if (glow.current) glow.current.intensity = (5 + Math.sin(t * 2.4) * 1.2) * (1 + 2 * night)
   })
 
   const posts = Math.max(3, Math.round(length / 0.75))

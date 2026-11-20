@@ -49,7 +49,11 @@
       "hint": "ドラッグで回転 · スクロール／ピンチでズーム · ランドマークをタップ · ← → で移動",
       "journey": "旅のルート",
       "switchLocale": "switch to English",
-      "localeLabel": "JA"
+      "localeLabel": "JA",
+      "timeOfDay": "時間帯",
+      "daNang": "ダナン",
+      "day": "昼",
+      "night": "夜"
     },
     "panel": {
       "back": "ワールドに戻る",
