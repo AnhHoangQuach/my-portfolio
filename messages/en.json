@@ -2,40 +2,11 @@
   "seo": {
     "siteTitle": "Quach Hoang Anh (Hayes) — Senior Software Engineer",
     "siteDescription": "Senior Software Engineer specializing in Next.js, React, TypeScript, Node.js and Go. I design backend services, event-driven architecture and scalable systems — five years shipping cash-handling telemetry, airline ticketing and real-time marketplaces.",
-    "homeTitle": "Quach Hoang Anh (Hayes) — Senior Software Engineer",
-    "blogTitle": "Engineering Notes",
-    "blogDescription": "Technical writing on backend architecture, Next.js and React in production, TypeScript, distributed systems and performance work — notes from systems Hayes has shipped and operated.",
-    "workTitle": "Case Studies & Engineering Work",
-    "workDescription": "Production systems Quach Hoang Anh (Hayes) has designed and shipped — problem, architecture, technology choices and measured impact for cash-handling telemetry, airline ticketing and real-time auction platforms."
-  },
-  "notFound": {
-    "eyebrow": "404 — not found",
-    "title": "This page doesn't exist.",
-    "description": "The link may be out of date. Try one of these instead.",
-    "home": "Homepage",
-    "work": "Case studies",
-    "blog": "Writing",
-    "contact": "Contact"
-  },
-  "nav": {
-    "about": "About",
-    "experience": "Experience",
-    "work": "Work",
-    "expertise": "Expertise",
-    "practice": "Practice",
-    "blog": "Blog",
-    "contact": "Contact",
-    "resume": "Resume",
-    "menu": "Navigation",
-    "openMenu": "Open menu"
+    "homeTitle": "Quach Hoang Anh (Hayes) — Senior Software Engineer"
   },
   "hero": {
     "eyebrow": "Quach Hoang Anh (Hayes) · Senior Software Engineer",
-    "headline": "Building software that survives scale.",
-    "viewWork": "View My Work",
-    "downloadResume": "Download Resume",
-    "terminalTitle": "~/systems — zsh",
-    "pipelineTitle": "EVENT PIPELINE — LIVE"
+    "headline": "Building software that survives scale."
   },
   "about": {
     "eyebrow": "About",
@@ -48,55 +19,111 @@
     "factLead": "Sub-team lead, reviews, mentoring",
     "factScrum": "Scrum, HUST software engineering"
   },
-  "experience": {
-    "eyebrow": "Experience",
-    "title": "Six teams, one throughline: make it hold under load."
-  },
-  "projects": {
-    "eyebrow": "Featured Work",
-    "title": "Three systems, written up as case studies.",
-    "description": "Problem, solution, architecture, impact — the way I'd walk a team through it in review.",
-    "problem": "Problem",
-    "solution": "Solution",
-    "architecture": "Architecture",
-    "techStack": "Tech stack",
-    "impact": "Impact",
-    "caseStudy": "Read the case study",
-    "allWork": "All case studies"
-  },
-  "expertise": {
-    "eyebrow": "Technical Expertise",
-    "title": "What I reach for, and why."
-  },
-  "practice": {
-    "eyebrow": "Leadership & Practice",
-    "title": "Senior work is mostly what happens around the code.",
-    "description": "Leading a sub-team at Glory and a delivery team at s6k Labs taught me that the throughput of a system and the throughput of the people maintaining it are the same problem."
-  },
-  "principles": {
-    "eyebrow": "Engineering Principles",
-    "title": "Five rules I don't trade away."
-  },
   "contact": {
     "eyebrow": "Contact",
     "title": "Let's build something worth scaling.",
     "description": "Open to senior backend, platform and full-stack roles. Fastest way to reach me is email — I answer within a day."
   },
-  "footer": {
-    "backToTop": "Back to top"
-  },
-  "blog": {
-    "title": "Blog",
-    "description": "Thoughts on engineering, architecture, and building at scale.",
-    "readMore": "Read more",
-    "minRead": "min read",
-    "backToBlog": "Back to Blog"
-  },
-  "caseStudy": {
-    "backToWork": "Back to Projects",
-    "techStack": "Tech Stack",
-    "challenge": "The Challenge",
-    "solution": "The Solution",
-    "results": "Results"
+  "world": {
+    "brand": "Da Nang DevQuest",
+    "tagline": "A Developer's Journey",
+    "initials": "HA",
+    "location": "Da Nang, Vietnam",
+    "loading": {
+      "title": "Loading the world",
+      "stage0": "Unrolling the map…",
+      "stage1": "Raising Son Tra's hills…",
+      "stage2": "Filling the Han River…",
+      "stage3": "Waking the dragon…",
+      "stage4": "Clearing the clouds…"
+    },
+    "intro": {
+      "title": "Welcome to My World",
+      "subtitle": "Software Engineer • Building Things That Matter",
+      "explore": "Explore My Journey",
+      "skip": "Skip Intro"
+    },
+    "hud": {
+      "menu": "Open menu",
+      "closeMenu": "Close menu",
+      "overview": "Back to overview",
+      "hint": "Drag to orbit · Scroll or pinch to zoom · Tap a landmark · ← → to travel",
+      "journey": "Journey",
+      "switchLocale": "switch to 日本語",
+      "localeLabel": "EN"
+    },
+    "panel": {
+      "back": "Back to World",
+      "next": "Next",
+      "previous": "Previous",
+      "stop": "Stop"
+    },
+    "fallback": {
+      "title": "This world needs WebGL",
+      "body": "Your browser couldn't start the 3D map. Everything on it is also available as text.",
+      "cta": "Read the text version"
+    },
+    "landmarks": {
+      "dragonBridge": {
+        "name": "Dragon Bridge",
+        "section": "Home",
+        "blurb": "Where the journey starts — the golden dragon over the Han River."
+      },
+      "cityCenter": {
+        "name": "City Center",
+        "section": "About Me",
+        "blurb": "Hai Chau's riverside skyline — who I am and how I work."
+      },
+      "sonTra": {
+        "name": "Son Tra Peninsula",
+        "section": "Skills",
+        "blurb": "Forested hills above the bay — the tools I reach for."
+      },
+      "myKhe": {
+        "name": "My Khe Beach",
+        "section": "Projects",
+        "blurb": "Six kilometres of sand — the systems I've shipped."
+      },
+      "marbleMountains": {
+        "name": "Marble Mountains",
+        "section": "Experience",
+        "blurb": "Five limestone peaks — the teams and years behind the work."
+      },
+      "loveBridge": {
+        "name": "Love Bridge",
+        "section": "Contact",
+        "blurb": "Lanterns on the river — let's talk."
+      }
+    },
+    "panels": {
+      "home": {
+        "greeting": "Xin chào — I'm Hoang Anh, a.k.a. Hayes.",
+        "intro": "A senior software engineer from Da Nang. Backend and platform work in NestJS and Go, typed React on the front, and a habit of caring about what happens after launch.",
+        "dragonTitle": "About this bridge",
+        "dragonBody": "Da Nang's Dragon Bridge breathes fire and water on weekend nights. Here it does it on demand.",
+        "fire": "Breathe fire",
+        "resume": "Résumé"
+      },
+      "about": {
+        "facts": "Quick facts",
+        "location": "Based in",
+        "education": "Education",
+        "credentials": "Credentials",
+        "languages": "Japanese / English"
+      },
+      "skills": {
+        "intro": "Six areas, each rooted in production work rather than tutorials."
+      },
+      "projects": {
+        "intro": "Selected production systems — the problem, the shape of the fix, and what it changed."
+      },
+      "experience": {
+        "intro": "Product and outsourcing teams across Vietnam, Japan and Korea."
+      },
+      "contact": {
+        "resume": "Download résumé",
+        "note": "Based in Da Nang (UTC+7), happy to work across time zones."
+      }
+    }
   }
 }

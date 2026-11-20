@@ -1,6 +1,6 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
@@ -12,80 +12,58 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Agent Instructions for my-portfolio
 
-> Read `ai-docs/guideline.md` for the full project reference. This file covers the high-level rules every agent MUST follow.
+> `CLAUDE.md` has the project overview; `ai-docs/guideline.md` the full reference. These are the rules that break the build or the site if ignored.
 
 ## Identity
 
-- **Project**: Portfolio site for Quach Hoang Anh
-- **Domain**: `hayes.io.vn`
-- **Stack**: Next.js 16.3.0 · React 19 · Tailwind CSS v4 · shadcn/ui v4 (base-ui) · next-intl 4.9 · MDX
+- **Project**: Portfolio of Quach Hoang Anh (Hayes) at `hayes.io.vn`
+- **What it is**: a single page — an interactive 3D miniature of Da Nang ("Da Nang DevQuest") — in English (`/`) and Japanese (`/ja`)
+- **Stack**: Next.js 16.4.6 · React 19.3 · three.js + React Three Fiber + drei · postprocessing + n8ao · Zustand · Tailwind CSS v4 · next-intl 4.15
+- **Toolchain**: Node 26 (`.nvmrc`) · pnpm 12 (`packageManager` in package.json)
 
-## Hard Rules — Violations Will Break the Build
+## Hard Rules
 
 ### 1. Next.js 16
 
-- **Proxy, not Middleware**: The routing interceptor is `proxy.ts` at project root. It exports a **named** `proxy` function. Do NOT create `middleware.ts`.
-- **Async params**: Page and layout `params` is always `Promise<{...}>`. Await it: `const { slug } = await params`.
-- **Server Components by default**: Only add `"use client"` when the component uses hooks (`useState`, `useEffect`, `useTranslations`, etc.), event handlers, or browser APIs.
-- **Consult the docs**: When unsure about an API, read `node_modules/next/dist/docs/01-app/` first.
+- **Proxy, not Middleware**: `proxy.ts` exports a **named** `proxy`. Do not create `middleware.ts`.
+- **Async params**: `params` is a `Promise` — `const { locale } = await params`.
+- **Stay static**: the homepage prerenders. Don't read headers/cookies/`searchParams` on the server; per-visit state (e.g. `?at=`) is read on the client.
 
 ### 2. Tailwind CSS v4
 
-- **No `tailwind.config.ts`**. Theme is in `app/globals.css` → `@theme inline {}`.
-- **Prefer built-in utilities** over arbitrary values (`h-125` not `h-[500px]`).
-- **Use `bg-size-[...]`**, not `[background-size:...]`.
-- **Use `supports-backdrop-filter:`**, not `supports-[backdrop-filter]:`.
-- Colors are oklch, hue 260 (blue).
+- No `tailwind.config.ts`. `app/globals.css` only wires up fonts; world UI tokens (`--w-*`) live in `components/world/world.css` inside `@layer components`.
 
-### 3. shadcn/ui v4 (base-ui)
+### 3. Internationalization (next-intl)
 
-- **`render` prop** for polymorphic composition:
-  ```tsx
-  <Button nativeButton={false} render={<Link href="/" />}>
-    Home
-  </Button>
-  ```
-- **`nativeButton={false}`** is required when `render` outputs a non-`<button>` element (e.g. `<Link>` → `<a>`). Without it, Base UI logs a warning.
-- **`asChild` does NOT exist** in this version. Using it will silently break rendering.
-- Add new components via `npx shadcn add <name>`. Do NOT hand-write `components/ui/` files.
+- Two locales: `en` (no prefix) and `ja` (`/ja`). `messages/en.json` and `messages/ja.json` **must** have identical keys.
+- Client Components never call `useTranslations()`: the page resolves every string on the server and passes it down as props (`WorldStrings`). The catalogue never ships to the browser.
 
-### 4. Internationalization (next-intl)
+### 4. The 3D world
 
-- **Two locales**: `en` (default, no prefix), `ja` (prefix `/ja`).
-- **All user-facing strings** in section components must use `useTranslations()`. Never hardcode display text.
-- **Translation files**: `messages/en.json`, `messages/ja.json`. Both MUST stay in sync — if you add a key to one, add it to the other.
-- **Locale-aware links** in client components: Import `Link` from `@/i18n/navigation`, not `next/link`.
+- Only `components/world/camera-rig.tsx` moves the camera; everything else bumps `command` in `lib/world/store.ts`. Never disable camera input during a flight — the visitor must always be able to take over.
+- Mutate three.js objects inside `useFrame` through refs (mesh refs, or lazily created refs) — never through `useMemo`/state values. The React Compiler lint rejects the latter.
+- GLSL: `smoothstep` edges must ascend, and no shader may divide by something that can reach 0. Post-processing runs in half-float buffers, where one `Inf` pixel blanks the frame.
+- Never set `scene.environment` on the main scene (it lights Lambert materials too).
+- **Create and dispose GPU resources in the same effect** (create in `useEffect`, dispose in its cleanup). `useMemo` + dispose-in-cleanup breaks under React Strict Mode in `pnpm dev`: the instant cleanup disposes what the memo still hands out. It froze the whole canvas once (PostFX).
+- Verify 3D changes by comparing real canvas pixels, in `pnpm dev` **and** a production build, on **both** quality tiers (`?quality=high|low`). DOM overlays (markers, panels) keep working even when the canvas is frozen.
 
-### 5. Brand Icons
+### 5. Brand icons
 
-`lucide-react` does NOT have GitHub/LinkedIn icons. Import from:
+`lucide-react` has no GitHub/LinkedIn icons — use `GithubIcon`/`LinkedinIcon` from `@/components/icons`.
 
-```tsx
-import { GithubIcon, LinkedinIcon } from '@/components/icons'
-```
+### 6. Dependencies
 
-### 6. Content (Blog / Case Studies)
-
-- Blog MDX: `content/blog/<slug>.mdx`
-- Case study MDX: `content/case-studies/<slug>.mdx`
-- Render with `<MDXRemote source={content} />` from `@/components/mdx-remote`.
-- Content is read server-side via `lib/content.ts`. Never import this in client components.
-
-### 7. Data Layer
-
-- Static data lives in `data/*.ts` (profile, navigation, hero, experiences, projects, expertise, practice, principles).
-- Type definitions in `types/index.ts` and `types/content.ts`.
-- Site-wide config (URL, OG image, description) in `lib/site-config.ts`.
+- Fix `pnpm audit` findings by upgrading the direct package or `pnpm update <transitive>` within ranges. Do **not** use `pnpm audit --fix` or `overrides`.
+- New packages with install scripts must be approved in `pnpm-workspace.yaml` (`allowBuilds`).
 
 ## Quick Reference
 
-| Task                 | Command / Location                                  |
-| -------------------- | --------------------------------------------------- |
-| Dev server           | `npm run dev`                                       |
-| Build                | `npm run build`                                     |
-| Add shadcn component | `npx shadcn add <name>`                             |
-| Add blog post        | Create `content/blog/<slug>.mdx`                    |
-| Add case study       | Create `content/case-studies/<slug>.mdx`            |
-| Add translation key  | Edit both `messages/en.json` AND `messages/ja.json` |
-| Change site URL/meta | Edit `lib/site-config.ts`                           |
-| Next.js 16 docs      | `node_modules/next/dist/docs/`                      |
+| Task                     | Command / Location                                       |
+| ------------------------ | -------------------------------------------------------- |
+| Dev server               | `pnpm dev`                                               |
+| Build                    | `pnpm build`                                             |
+| Lint                     | `pnpm lint`                                              |
+| Move a landmark / camera | `lib/world/landmarks.ts`                                 |
+| Edit section content     | `components/world/panels/index.tsx`, `data/*.ts`         |
+| Add a translation key    | Both `messages/en.json` **and** `messages/ja.json`       |
+| Site URL / metadata      | `lib/site-config.ts`, `lib/metadata.ts`                  |

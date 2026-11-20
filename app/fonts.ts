@@ -1,26 +1,17 @@
-import { Geist, JetBrains_Mono, Space_Grotesk } from 'next/font/google'
+import { Space_Grotesk } from 'next/font/google'
 
 /**
- * Shared across the locale layout and the global 404, which own separate
- * `<html>` trees. Instantiating `next/font` twice would emit two copies of the
- * same @font-face block and two preloads, so both import from here.
+ * One web font only: Space Grotesk for display type (titles, names, panel
+ * headings). Body copy and the small mono labels use the platform's own UI
+ * fonts (see `app/globals.css`), which cost nothing to download.
+ *
+ * Shared by the locale layout and the global 404 so the @font-face block and
+ * its preload are emitted once.
  */
-const geist = Geist({
-  variable: '--font-sans',
-  subsets: ['latin'],
-  display: 'swap',
-})
-
 const spaceGrotesk = Space_Grotesk({
-  variable: '--font-heading',
+  variable: '--font-display',
   subsets: ['latin'],
   display: 'swap',
 })
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-mono-family',
-  subsets: ['latin'],
-  display: 'swap',
-})
-
-export const fontVariables = `${geist.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`
+export const fontVariables = spaceGrotesk.variable

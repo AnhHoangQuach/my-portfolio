@@ -21,15 +21,6 @@ export interface Profile {
   credentials: string
 }
 
-/** One line of the animated hero terminal. */
-export interface TerminalLine {
-  /** Shell prompt; empty string marks an output (non-typed-prompt) line. */
-  prompt: string
-  text: string
-  /** Which text tier the line renders in. */
-  tone: 'command' | 'output' | 'accent' | 'violet'
-}
-
 /** A stat printed under the hero pipeline diagram. */
 export interface Stat {
   value: string
@@ -84,36 +75,4 @@ export interface ExpertiseArea {
   title: string
   note: string
   items: string[]
-}
-
-export interface PracticeItem {
-  kicker: string
-  title: string
-  body: string
-}
-
-export interface Principle {
-  n: string
-  title: string
-  body: string
-}
-
-/** Translation key under the `nav` namespace. */
-export type NavLabelKey =
-  | 'about'
-  | 'experience'
-  | 'work'
-  | 'expertise'
-  | 'practice'
-  | 'blog'
-  | 'contact'
-  | 'resume'
-  | 'menu'
-  | 'openMenu'
-
-export interface NavItem {
-  label: NavLabelKey
-  href: string
-  /** Section id used for scroll-spy; absent for links that leave the page. */
-  sectionId?: string
 }

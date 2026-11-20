@@ -2,40 +2,11 @@
   "seo": {
     "siteTitle": "Quach Hoang Anh (Hayes) — シニアソフトウェアエンジニア",
     "siteDescription": "Next.js・React・TypeScript・Node.js・Go を専門とするシニアソフトウェアエンジニア。バックエンドサービス、イベント駆動アーキテクチャ、スケーラブルなシステムを設計。現金処理機のテレメトリ、航空券販売基盤、リアルタイムマーケットプレイスを5年間開発・運用してきました。",
-    "homeTitle": "Quach Hoang Anh (Hayes) — シニアソフトウェアエンジニア",
-    "blogTitle": "エンジニアリングノート",
-    "blogDescription": "バックエンドアーキテクチャ、本番環境の Next.js と React、TypeScript、分散システム、パフォーマンス改善についての技術記事 — Hayes が実際に開発・運用したシステムからの記録。",
-    "workTitle": "ケーススタディと実績",
-    "workDescription": "Quach Hoang Anh (Hayes) が設計・開発した本番システム — 現金処理テレメトリ、航空券販売基盤、リアルタイムオークションについて、課題・アーキテクチャ・技術選定・成果をまとめています。"
-  },
-  "notFound": {
-    "eyebrow": "404 — ページが見つかりません",
-    "title": "このページは存在しません。",
-    "description": "リンクが古い可能性があります。以下からお進みください。",
-    "home": "ホーム",
-    "work": "ケーススタディ",
-    "blog": "ブログ",
-    "contact": "お問い合わせ"
-  },
-  "nav": {
-    "about": "概要",
-    "experience": "経歴",
-    "work": "実績",
-    "expertise": "技術領域",
-    "practice": "働き方",
-    "blog": "ブログ",
-    "contact": "お問い合わせ",
-    "resume": "履歴書",
-    "menu": "ナビゲーション",
-    "openMenu": "メニューを開く"
+    "homeTitle": "Quach Hoang Anh (Hayes) — シニアソフトウェアエンジニア"
   },
   "hero": {
     "eyebrow": "Quach Hoang Anh (Hayes) · シニアソフトウェアエンジニア",
-    "headline": "スケールに耐えるソフトウェアをつくる。",
-    "viewWork": "実績を見る",
-    "downloadResume": "履歴書をダウンロード",
-    "terminalTitle": "~/systems — zsh",
-    "pipelineTitle": "EVENT PIPELINE — LIVE"
+    "headline": "スケールに耐えるソフトウェアをつくる。"
   },
   "about": {
     "eyebrow": "概要",
@@ -48,55 +19,111 @@
     "factLead": "サブチームリード・レビュー・育成",
     "factScrum": "スクラム / ハノイ工科大学 ソフトウェア工学"
   },
-  "experience": {
-    "eyebrow": "経歴",
-    "title": "6つのチーム、一貫した軸は「負荷に耐えること」。"
-  },
-  "projects": {
-    "eyebrow": "主な実績",
-    "title": "3つのシステムをケーススタディとして。",
-    "description": "課題・解決策・アーキテクチャ・成果 — レビューでチームに説明するのと同じ順序で。",
-    "problem": "課題",
-    "solution": "解決策",
-    "architecture": "アーキテクチャ",
-    "techStack": "技術スタック",
-    "impact": "成果",
-    "caseStudy": "ケーススタディを読む",
-    "allWork": "実績をすべて見る"
-  },
-  "expertise": {
-    "eyebrow": "技術領域",
-    "title": "選ぶ技術と、その理由。"
-  },
-  "practice": {
-    "eyebrow": "リードと働き方",
-    "title": "シニアの仕事の多くは、コードの周辺で起きている。",
-    "description": "Glory でのサブチーム、s6k Labs でのデリバリーチームをリードして学んだのは、システムのスループットと、それを保守する人たちのスループットは同じ問題だということでした。"
-  },
-  "principles": {
-    "eyebrow": "エンジニアリング原則",
-    "title": "譲らない5つの原則。"
-  },
   "contact": {
     "eyebrow": "お問い合わせ",
     "title": "スケールさせる価値のあるものを、一緒に。",
     "description": "シニアバックエンド・プラットフォーム・フルスタックのポジションを検討しています。最も早いのはメールです。1日以内に返信します。"
   },
-  "footer": {
-    "backToTop": "トップへ戻る"
-  },
-  "blog": {
-    "title": "ブログ",
-    "description": "エンジニアリング、アーキテクチャ、大規模開発についての記録。",
-    "readMore": "続きを読む",
-    "minRead": "分で読めます",
-    "backToBlog": "ブログ一覧へ"
-  },
-  "caseStudy": {
-    "backToWork": "実績一覧へ",
-    "techStack": "技術スタック",
-    "challenge": "課題",
-    "solution": "解決策",
-    "results": "成果"
+  "world": {
+    "brand": "Da Nang DevQuest",
+    "tagline": "ある開発者の旅",
+    "initials": "HA",
+    "location": "ベトナム・ダナン",
+    "loading": {
+      "title": "ワールドを読み込み中",
+      "stage0": "地図を広げています…",
+      "stage1": "ソンチャの丘を盛り上げています…",
+      "stage2": "ハン川に水を流しています…",
+      "stage3": "ドラゴンを起こしています…",
+      "stage4": "雲を晴らしています…"
+    },
+    "intro": {
+      "title": "ようこそ、私の世界へ",
+      "subtitle": "ソフトウェアエンジニア • 意味のあるものをつくる",
+      "explore": "旅をはじめる",
+      "skip": "イントロをスキップ"
+    },
+    "hud": {
+      "menu": "メニューを開く",
+      "closeMenu": "メニューを閉じる",
+      "overview": "全体表示に戻る",
+      "hint": "ドラッグで回転 · スクロール／ピンチでズーム · ランドマークをタップ · ← → で移動",
+      "journey": "旅のルート",
+      "switchLocale": "switch to English",
+      "localeLabel": "JA"
+    },
+    "panel": {
+      "back": "ワールドに戻る",
+      "next": "次へ",
+      "previous": "前へ",
+      "stop": "スポット"
+    },
+    "fallback": {
+      "title": "このページには WebGL が必要です",
+      "body": "お使いのブラウザでは 3D マップを起動できませんでした。同じ内容をテキストでご覧いただけます。",
+      "cta": "テキスト版を読む"
+    },
+    "landmarks": {
+      "dragonBridge": {
+        "name": "ドラゴン橋",
+        "section": "ホーム",
+        "blurb": "旅の出発点 — ハン川に架かる黄金の竜。"
+      },
+      "cityCenter": {
+        "name": "市街地",
+        "section": "自己紹介",
+        "blurb": "ハイチャウの川沿いの街並み — 私について、働き方について。"
+      },
+      "sonTra": {
+        "name": "ソンチャ半島",
+        "section": "スキル",
+        "blurb": "湾を見下ろす森の丘 — 普段使っている技術。"
+      },
+      "myKhe": {
+        "name": "ミーケービーチ",
+        "section": "プロジェクト",
+        "blurb": "どこまでも続く砂浜 — これまでに届けたシステム。"
+      },
+      "marbleMountains": {
+        "name": "五行山",
+        "section": "経歴",
+        "blurb": "五つの大理石の峰 — 仕事を支えてきたチームと年月。"
+      },
+      "loveBridge": {
+        "name": "愛の橋",
+        "section": "お問い合わせ",
+        "blurb": "川面に灯るランタン — お気軽にご連絡ください。"
+      }
+    },
+    "panels": {
+      "home": {
+        "greeting": "Xin chào — ホアンアン（Hayes）です。",
+        "intro": "ダナン出身のシニアソフトウェアエンジニア。NestJS と Go によるバックエンド・基盤開発、型安全な React によるフロントエンド、そしてリリース後に何が起きるかを大切にしています。",
+        "dragonTitle": "この橋について",
+        "dragonBody": "ダナンのドラゴン橋は、週末の夜に火と水を吹きます。ここではいつでも吹かせられます。",
+        "fire": "火を吹かせる",
+        "resume": "履歴書"
+      },
+      "about": {
+        "facts": "プロフィール",
+        "location": "拠点",
+        "education": "学歴",
+        "credentials": "資格",
+        "languages": "日本語 / 英語"
+      },
+      "skills": {
+        "intro": "チュートリアルではなく、本番運用の経験に根ざした 6 つの領域。"
+      },
+      "projects": {
+        "intro": "本番環境で稼働するシステムから抜粋 — 課題、解決の形、そして何が変わったか。"
+      },
+      "experience": {
+        "intro": "ベトナム・日本・韓国向けのプロダクト／受託開発チームでの経歴。"
+      },
+      "contact": {
+        "resume": "履歴書をダウンロード",
+        "note": "ダナン（UTC+7）在住。タイムゾーンをまたいだ協業も歓迎です。"
+      }
+    }
   }
 }

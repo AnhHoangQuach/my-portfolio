@@ -5,7 +5,6 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
-import { ThemeProvider } from '@/components/theme-provider'
 import { siteConfig } from '@/lib/site-config'
 import { ogLocale } from '@/lib/metadata'
 import { routing } from '@/i18n/routing'
@@ -16,12 +15,11 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
 }
 
+// The world is always a sunny afternoon: one light palette, browser chrome
+// tinted to match the sky behind the loading screen.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#05070d' },
-  ],
-  colorScheme: 'dark light',
+  themeColor: '#A9D8E8',
+  colorScheme: 'light',
 }
 
 export async function generateMetadata({
@@ -124,27 +122,14 @@ export default async function LocaleLayout({
   // `lang` comes from the route param — no request-header read, no opt-out of
   // static rendering.
   //
-  // The provider is mounted for `locale` only — the client-side `Link` from
-  // `@/i18n/navigation` reads it. No `messages` prop: every Client Component
-  // gets its strings as props (see components/layout/site-header.tsx), so the
-  // catalogue never enters the browser payload.
+  // The provider is mounted for `locale` only — the client-side navigation
+  // helpers in `@/i18n/navigation` read it. No `messages` prop: every Client
+  // Component gets its strings as props, so the catalogue never enters the
+  // browser payload.
   return (
-    <html
-      lang={locale}
-      className={fontVariables}
-      data-scroll-behavior="smooth"
-      suppressHydrationWarning
-    >
-      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
-        {/* Reveals start hidden and are lifted by an observer. Without JS that
-            observer never runs, so unhide everything up front — otherwise a
-            crawler that renders without executing scripts sees a blank page. */}
-        <noscript>
-          <style>{'[data-reveal]{opacity:1 !important;transform:none !important}'}</style>
-        </noscript>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <NextIntlClientProvider locale={locale}>{children}</NextIntlClientProvider>
-        </ThemeProvider>
+    <html lang={locale} className={fontVariables}>
+      <body className="min-h-dvh bg-[#bfe3ef] font-sans text-[#3e3a34] antialiased">
+        <NextIntlClientProvider locale={locale}>{children}</NextIntlClientProvider>
         <Analytics />
         <SpeedInsights />
       </body>

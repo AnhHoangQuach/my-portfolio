@@ -1,0 +1,246 @@
+/*
+ * Da Nang DevQuest — game UI layer. The world is always a sunny afternoon, so
+ * this UI keeps its own light palette regardless of the site's theme.
+ *
+ * Layered as components so Tailwind utilities (hidden, lg:flex, …) override it.
+ */
+@layer components {
+  .world-root,
+  #world-text {
+    --w-ink: #3e3a34;
+    --w-ink-soft: #6f675c;
+    --w-paper: #fff8eb;
+    --w-paper-2: #f7eddb;
+    --w-wood: #a87959;
+    --w-wood-dark: #7e573e;
+    --w-gold: #f2b632;
+    --w-sky: #a9d8e8;
+    --w-sea: #69c5c0;
+    --w-shadow: 0 10px 30px -12px rgb(84 60 32 / 0.35), 0 2px 6px -2px rgb(84 60 32 / 0.18);
+    color: var(--w-ink);
+    background: linear-gradient(180deg, #bfe3ef 0%, #fff0d6 100%);
+  }
+
+  /* Panels and chips: paper card with a thin wooden rim. */
+  .world-card {
+    background: color-mix(in oklab, var(--w-paper) 92%, transparent);
+    border: 1.5px solid color-mix(in oklab, var(--w-wood) 45%, transparent);
+    box-shadow: var(--w-shadow);
+    border-radius: 1.1rem;
+  }
+  @supports (backdrop-filter: blur(1px)) {
+    .world-card {
+      background: color-mix(in oklab, var(--w-paper) 82%, transparent);
+      backdrop-filter: blur(10px) saturate(1.2);
+    }
+  }
+
+  .world-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease,
+      background-color 160ms ease;
+    outline: none;
+  }
+  .world-btn:focus-visible {
+    box-shadow:
+      0 0 0 3px var(--w-paper),
+      0 0 0 5px var(--w-wood);
+  }
+  .world-btn:active {
+    transform: translateY(1px);
+  }
+  .world-btn-primary {
+    background: var(--w-gold);
+    color: #3a2a10;
+    box-shadow:
+      inset 0 -3px 0 rgb(0 0 0 / 0.14),
+      var(--w-shadow);
+  }
+  .world-btn-primary:hover {
+    background: #f6c24d;
+    transform: translateY(-1px);
+  }
+  .world-btn-ghost {
+    background: color-mix(in oklab, var(--w-paper) 85%, transparent);
+    color: var(--w-ink);
+    border: 1.5px solid color-mix(in oklab, var(--w-wood) 40%, transparent);
+  }
+  .world-btn-ghost:hover {
+    background: var(--w-paper);
+    transform: translateY(-1px);
+  }
+
+  /* Floating landmark markers (rendered by drei <Html>). */
+  .world-marker {
+    animation: world-bob 3.2s ease-in-out infinite;
+    cursor: pointer;
+  }
+  .world-marker-icon {
+    background: var(--w-paper);
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    box-shadow: var(--w-shadow);
+    transition: transform 200ms ease;
+  }
+  .world-marker-label {
+    background: color-mix(in oklab, var(--w-paper) 92%, transparent);
+    color: var(--w-ink);
+    border: 1.5px solid color-mix(in oklab, var(--accent) 60%, transparent);
+    box-shadow: var(--w-shadow);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+      opacity 200ms ease,
+      transform 200ms ease;
+    pointer-events: none;
+  }
+  .world-marker:hover .world-marker-label,
+  .world-marker:focus-visible .world-marker-label,
+  .world-marker[data-hovered] .world-marker-label {
+    opacity: 1;
+    transform: none;
+  }
+  .world-marker:hover .world-marker-icon,
+  .world-marker[data-hovered] .world-marker-icon {
+    transform: scale(1.12);
+  }
+  .world-marker:focus-visible {
+    outline: none;
+  }
+  .world-marker:focus-visible .world-marker-icon {
+    box-shadow:
+      0 0 0 3px var(--w-paper),
+      0 0 0 5px var(--accent);
+  }
+
+  @keyframes world-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  /* Loading screen clouds. */
+  .world-cloud {
+    position: absolute;
+    border-radius: 999px;
+    background: #fff;
+    filter: blur(2px);
+    opacity: 0.9;
+    animation: world-drift 14s ease-in-out infinite alternate;
+  }
+  .world-cloud::before,
+  .world-cloud::after {
+    content: '';
+    position: absolute;
+    background: #fff;
+    border-radius: 999px;
+  }
+  .world-cloud::before {
+    width: 55%;
+    height: 160%;
+    left: 15%;
+    bottom: 30%;
+  }
+  .world-cloud::after {
+    width: 40%;
+    height: 130%;
+    right: 12%;
+    bottom: 25%;
+  }
+  @keyframes world-drift {
+    from {
+      transform: translateX(-4vw);
+    }
+    to {
+      transform: translateX(4vw);
+    }
+  }
+
+  .world-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--w-wood) 50%, transparent) transparent;
+  }
+  .world-scroll-x {
+    scrollbar-width: none;
+  }
+  .world-scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Title-card entrance. `backwards` fill only: once finished, the element
+     is back to its own styles, so hover/active transforms keep working. */
+  .world-rise {
+    animation: world-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .world-rise-tilt {
+    --rise-y: 28px;
+    --rise-tilt: -50deg;
+    animation-duration: 0.8s;
+  }
+  @keyframes world-rise {
+    from {
+      opacity: 0;
+      transform: translateY(var(--rise-y, 14px)) rotateX(var(--rise-tilt, 0deg));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .world-marker,
+    .world-cloud,
+    .world-rise {
+      animation: none;
+    }
+  }
+}
+
+/* Controls that only make sense next to the 3D scene (e.g. "Breathe fire")
+   are dropped from the text version, for screen readers and text mode alike. */
+#world-text [data-world-only] {
+  display: none;
+}
+
+/*
+ * Text mode (no WebGL): hide the map, show the server-rendered text version.
+ * Unlayered on purpose, so it overrides Tailwind's `sr-only` utility.
+ */
+html[data-text-mode] .world-root {
+  display: none;
+}
+html[data-text-mode] #world-text {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+  max-width: 42rem;
+  overflow: visible;
+  clip-path: none;
+  clip: auto;
+  white-space: normal;
+  outline: none;
+}
+html[data-text-mode] #world-text h1 {
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+html[data-text-mode] #world-text > section {
+  margin-top: 2.5rem;
+}
+html[data-text-mode] #world-text > section > h2 {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}

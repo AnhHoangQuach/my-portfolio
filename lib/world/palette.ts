@@ -1,0 +1,35 @@
+/**
+ * Art-direction palette for the 3D world. Every material in the scene pulls
+ * from here so the diorama stays in one consistent pastel key.
+ */
+export const palette = {
+  ocean: '#A9D8E8',
+  turquoise: '#69C5C0',
+  deepSea: '#4FA9B8',
+  grass: '#B5D8A4',
+  grassLight: '#C9E3B3',
+  forest: '#6A9C89',
+  forestDark: '#55836F',
+  sunlight: '#F7D9A2',
+  wood: '#A87959',
+  woodDark: '#7E573E',
+  sand: '#F2D7A0',
+  sandWet: '#E3C48A',
+  warmWhite: '#FFF8EB',
+  stone: '#E7DCCB',
+  road: '#E4D8C4',
+  roadEdge: '#D5C7AF',
+  limestone: '#DDD5C6',
+  limestoneShade: '#C9BFAE',
+  gold: '#F2B632',
+  goldGlow: '#FFB21F',
+  heart: '#F2748A',
+  lantern: '#FFC977',
+  window: '#FFD98A',
+  pagodaRed: '#C8574A',
+  roofs: ['#E9A38B', '#F0C38E', '#9CC5D9', '#B9A6D6', '#EBB5B8', '#A8CFB0', '#F3D6A4'],
+  walls: ['#FFF8EB', '#F7EBDD', '#F3E4D3', '#EDE6DA', '#F9F0E3', '#E9EEF0'],
+  cars: ['#F28C7B', '#7FB7D9', '#FFF8EB', '#F5C76B', '#9ED0B4', '#C9A7E0'],
+  sky: { top: '#8CCBE6', horizon: '#FFF0D6', bottom: '#D8ECEF' },
+  fog: '#E8F1EC',
+} as const
