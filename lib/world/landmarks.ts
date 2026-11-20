@@ -119,8 +119,10 @@ export const LANDMARK_ORDER: LandmarkId[] = [
 
 /** Wide establishing shot the explore mode starts from. */
 export const OVERVIEW_SHOT = {
-  position: [17, 100, 130] as Vec3,
-  target: [4, 0, 8] as Vec3,
+  // A city-builder view: the whole city in frame, the bay, Son Tra and the
+  // mountains beyond, and the horizon along the top.
+  position: [36, 44, 142] as Vec3,
+  target: [2, 0, -8] as Vec3,
 }
 
 /** Last frame of the intro flight: hovering over the Dragon Bridge. */

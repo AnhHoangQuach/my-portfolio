@@ -13,6 +13,7 @@ import { palette } from '@/lib/world/palette'
 /* ------------------------------------------------------------------------ */
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0)
+const unitCylinder = new THREE.CylinderGeometry(1, 1, 1, 10).translate(0, 0.5, 0)
 
 /** Four-sided pyramid, base 1×1, height 1, sitting on y = 0. */
 const hipRoof = (() => {
@@ -87,13 +88,16 @@ export function Buildings({ items }: { items: Building[] }) {
   const flat = useMemo(() => items.filter((b) => b.roofKind === 'flat'), [items])
   const hip = useMemo(() => items.filter((b) => b.roofKind === 'hip'), [items])
   const gable = useMemo(() => items.filter((b) => b.roofKind === 'gable'), [items])
-  const tanks = useMemo(() => flat.filter((b) => b.h > 2.6), [flat])
+  // Rooftop clutter: water tanks on houses (very Da Nang), plant rooms on the rest.
+  const tanks = useMemo(() => flat.filter((b) => b.kind === 'house'), [flat])
+  const plant = useMemo(() => flat.filter((b) => b.kind !== 'house'), [flat])
 
   const walls = useRef<THREE.InstancedMesh>(null)
   const flatRef = useRef<THREE.InstancedMesh>(null)
   const hipRef = useRef<THREE.InstancedMesh>(null)
   const gableRef = useRef<THREE.InstancedMesh>(null)
   const tankRef = useRef<THREE.InstancedMesh>(null)
+  const plantRef = useRef<THREE.InstancedMesh>(null)
 
   useInstances(
     walls,
@@ -157,11 +161,26 @@ export function Buildings({ items }: { items: Building[] }) {
     useMemo(
       () => (i: number, d: THREE.Object3D, c: THREE.Color) => {
         const b = tanks[i]
-        d.position.set(b.x + b.w * 0.18, b.h + 0.14, b.z - b.d * 0.15)
-        d.scale.set(b.w * 0.35, 0.32, b.d * 0.3)
-        c.set(palette.stone)
+        const k = (b.x * 7.3 + b.z * 3.1) % 1
+        d.position.set(b.x + b.w * 0.22, b.h + 0.14, b.z - b.d * 0.3)
+        d.rotation.set(0, 0, 0)
+        d.scale.set(0.085, 0.17, 0.085)
+        c.set(Math.abs(k) < 0.7 ? '#c9cdd0' : '#2f6fb3')
       },
       [tanks],
+    ),
+  )
+  useInstances(
+    plantRef,
+    plant.length,
+    useMemo(
+      () => (i: number, d: THREE.Object3D, c: THREE.Color) => {
+        const b = plant[i]
+        d.position.set(b.x + b.w * 0.12, b.h + 0.14, b.z - b.d * 0.1)
+        d.scale.set(b.w * 0.42, b.kind === 'tower' ? 0.36 : 0.22, b.d * 0.38)
+        c.set('#9a968d')
+      },
+      [plant],
     ),
   )
 
@@ -176,7 +195,8 @@ export function Buildings({ items }: { items: Building[] }) {
       <instancedMesh ref={flatRef} args={[unitBox, roofMaterial, flat.length]} castShadow />
       <instancedMesh ref={hipRef} args={[hipRoof, roofMaterial, hip.length]} castShadow />
       <instancedMesh ref={gableRef} args={[gableRoof, roofMaterial, gable.length]} castShadow />
-      <instancedMesh ref={tankRef} args={[unitBox, roofMaterial, tanks.length]} castShadow />
+      <instancedMesh ref={tankRef} args={[unitCylinder, roofMaterial, tanks.length]} castShadow />
+      <instancedMesh ref={plantRef} args={[unitBox, roofMaterial, plant.length]} castShadow />
     </group>
   )
 }

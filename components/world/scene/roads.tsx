@@ -6,6 +6,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 import { hillHeight, ribbonGeometry, resample, type XZ } from '@/lib/world/geo'
 import { blockOnLand, layout, roads } from '@/lib/world/layout'
+import { StaticInstances } from './instanced'
 import { palette } from '@/lib/world/palette'
 
 /** Son Tra's winding road: from the coastal road, past the pagoda, over the hills. */
@@ -29,15 +30,77 @@ export const SON_TRA_ROAD: XZ[] = resample(
 )
 
 /**
- * All roads, promenades and paved block plinths, merged into one mesh per
- * surface so the street network costs three draw calls.
+ * Asphalt with lane markings drawn from the ribbon's UVs (x = distance along
+ * the road, y = 0..1 across): a dashed centre line, solid edge lines, darker
+ * wheel tracks and fine aggregate noise. One material for every road.
+ */
+function createAsphaltMaterial() {
+  const m = new THREE.MeshLambertMaterial({ color: palette.asphalt })
+  m.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vRoadUv;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRoadUv = uv;')
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        varying vec2 vRoadUv;
+        float rHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }`,
+      )
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+        float across = vRoadUv.y;
+        float along = vRoadUv.x;
+        diffuseColor.rgb *= 0.9 + rHash(floor(vec2(along, across * 4.0) * 24.0)) * 0.14;
+        float tracks = smoothstep(0.12, 0.0, abs(across - 0.27)) + smoothstep(0.12, 0.0, abs(across - 0.73));
+        diffuseColor.rgb *= 1.0 - tracks * 0.08;
+        float dash = step(0.5, fract(along * 0.85));
+        float centre = (1.0 - smoothstep(0.012, 0.026, abs(across - 0.5))) * dash;
+        float edges = (1.0 - smoothstep(0.012, 0.024, abs(across - 0.07))) +
+                      (1.0 - smoothstep(0.012, 0.024, abs(across - 0.93)));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.77, 0.72), clamp(centre + edges, 0.0, 1.0) * 0.85);`,
+      )
+  }
+  m.customProgramCacheKey = () => 'world-asphalt'
+  m.polygonOffset = true
+  m.polygonOffsetFactor = -2
+  return m
+}
+
+/** Light posts along the main roads, both sides, one instanced draw per part. */
+function streetLights() {
+  const posts: [number, number, number][] = []
+  for (const r of roads) {
+    if (r.kind !== 'road') continue
+    const pts = resample(r.line, 3.2)
+    pts.forEach(([x, z], i) => {
+      const a = pts[Math.max(0, i - 1)]
+      const b = pts[Math.min(pts.length - 1, i + 1)]
+      const dx = b[0] - a[0]
+      const dz = b[1] - a[1]
+      const len = Math.hypot(dx, dz) || 1
+      const off = r.width / 2 + 0.3
+      for (const side of [-1, 1]) {
+        if (Math.hypot(x, z) > 140) continue
+        posts.push([x - (dz / len) * off * side, 0, z + (dx / len) * off * side])
+      }
+    })
+  }
+  return posts
+}
+
+/**
+ * Roads (asphalt over a concrete sidewalk), riverside promenades, paved block
+ * plinths, parks and street lights, merged so the street network costs a
+ * handful of draw calls.
  */
 export function Roads() {
-  const { asphalt, promenade, plinths, parks, mountain } = useMemo(() => {
+  const { asphalt, sidewalk, promenade, plinths, parks, mountain, lights } = useMemo(() => {
     const flat = () => 0.03
-    const road = roads
-      .filter((r) => r.kind === 'road')
-      .map((r, i) => ribbonGeometry(r.line, r.width, () => 0.03 + (i % 3) * 0.002))
+    const main = roads.filter((r) => r.kind === 'road')
+    const road = main.map((r) => ribbonGeometry(r.line, r.width, () => 0.034))
+    const walks = main.map((r) => ribbonGeometry(r.line, r.width + 0.7, () => 0.026))
     const walk = roads
       .filter((r) => r.kind === 'promenade')
       .map((r) => ribbonGeometry(r.line, r.width, flat))
@@ -58,28 +121,36 @@ export function Roads() {
 
     return {
       asphalt: strip(road),
+      sidewalk: strip(walks),
       promenade: strip(walk),
       plinths: strip(pads),
       parks: strip(greens),
       mountain: ribbonGeometry(SON_TRA_ROAD, 0.7, (x, z) => hillHeight(x, z) + 0.06),
+      lights: streetLights().map((position) => ({ position })),
     }
   }, [])
 
+  const asphaltMaterial = useMemo(() => createAsphaltMaterial(), [])
+  const poleGeometry = useMemo(() => new THREE.CylinderGeometry(0.018, 0.024, 0.75, 5).translate(0, 0.375, 0), [])
+  const lampGeometry = useMemo(() => new THREE.BoxGeometry(0.16, 0.04, 0.06).translate(0, 0.76, 0), [])
+  const poleMaterial = useMemo(() => new THREE.MeshLambertMaterial({ color: '#6d7074' }), [])
+
   return (
     <group>
-      {asphalt && (
-        <mesh geometry={asphalt} receiveShadow>
-          <meshLambertMaterial color={palette.road} polygonOffset polygonOffsetFactor={-1} />
+      {sidewalk && (
+        <mesh geometry={sidewalk} receiveShadow>
+          <meshLambertMaterial color={palette.sidewalk} polygonOffset polygonOffsetFactor={-1} />
         </mesh>
       )}
+      {asphalt && <mesh geometry={asphalt} material={asphaltMaterial} receiveShadow />}
       {promenade && (
         <mesh geometry={promenade} receiveShadow>
-          <meshLambertMaterial color={palette.sand} polygonOffset polygonOffsetFactor={-1} />
+          <meshLambertMaterial color={palette.sidewalk} polygonOffset polygonOffsetFactor={-1} />
         </mesh>
       )}
       {plinths && (
         <mesh geometry={plinths} receiveShadow>
-          <meshLambertMaterial color={palette.stone} />
+          <meshLambertMaterial color={palette.sidewalk} />
         </mesh>
       )}
       {parks && (
@@ -87,9 +158,9 @@ export function Roads() {
           <meshLambertMaterial color={palette.grassLight} />
         </mesh>
       )}
-      <mesh geometry={mountain} receiveShadow>
-        <meshLambertMaterial color={palette.road} polygonOffset polygonOffsetFactor={-2} />
-      </mesh>
+      <mesh geometry={mountain} material={asphaltMaterial} receiveShadow />
+      <StaticInstances geometry={poleGeometry} material={poleMaterial} items={lights} castShadow />
+      <StaticInstances geometry={lampGeometry} material={poleMaterial} items={lights} />
     </group>
   )
 }

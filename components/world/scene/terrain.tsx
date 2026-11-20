@@ -3,69 +3,46 @@
 import { useLayoutEffect, useMemo } from 'react'
 import * as THREE from 'three'
 
-import { EAST_LAND, WEST_LAND, WORLD, shapeFromXZ } from '@/lib/world/geo'
+import {
+  EAST_LAND,
+  FAR,
+  WEST_LAND,
+  WORLD,
+  farTerrainHeight,
+  pointInPolygon,
+  shapeFromXZ,
+} from '@/lib/world/geo'
 import { createGroundMaterial, createWaterMaterial } from '@/lib/world/materials'
 import { palette } from '@/lib/world/palette'
 
 /**
- * The diorama itself: a round earthen platter, a cut-away layer of sea, and
- * the two banks of the Han River extruded as chunky slabs. The river is the
- * gap between the slabs, so its banks read as real embankments.
+ * The land and sea, out to the horizon: the two banks of the Han River as
+ * extruded slabs (so the river and coasts have real embankments), an open sea
+ * plane, and a height field for the distant hills and mountains.
  */
 export function Terrain() {
+  const ground = useMemo(() => createGroundMaterial(), [])
   return (
     <group>
-      <Platter />
       <Water />
-      <LandSlab poly={WEST_LAND} />
-      <LandSlab poly={EAST_LAND} />
-    </group>
-  )
-}
-
-function Platter() {
-  const R = WORLD.radius
-  return (
-    <group>
-      {/* Cut-away water column, visible from the side of the platter. */}
-      <mesh position={[0, (WORLD.waterY + WORLD.seabedY) / 2, 0]}>
-        <cylinderGeometry args={[R, R, WORLD.waterY - WORLD.seabedY, 96, 1, true]} />
-        <meshLambertMaterial
-          color={palette.turquoise}
-          transparent
-          opacity={0.82}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-      {/* Seabed sand layer. */}
-      <mesh position={[0, WORLD.seabedY - 0.35, 0]} receiveShadow>
-        <cylinderGeometry args={[R, R, 0.7, 96]} />
-        <meshLambertMaterial color={palette.sand} />
-      </mesh>
-      {/* Earth and the wooden base of the diorama. */}
-      <mesh position={[0, WORLD.seabedY - 2.1, 0]}>
-        <cylinderGeometry args={[R + 0.1, R - 0.6, 2.8, 96]} />
-        <meshLambertMaterial color={palette.wood} />
-      </mesh>
-      <mesh position={[0, WORLD.seabedY - 3.7, 0]}>
-        <cylinderGeometry args={[R - 0.6, R - 1.6, 0.4, 96]} />
-        <meshLambertMaterial color={palette.woodDark} />
-      </mesh>
+      <LandSlab poly={WEST_LAND} ground={ground} />
+      <LandSlab poly={EAST_LAND} ground={ground} />
+      <FarTerrain ground={ground} />
     </group>
   )
 }
 
 function Water() {
   const material = useMemo(() => createWaterMaterial(), [])
-  const R = WORLD.radius
+  const size = FAR * 2 + 600
   return (
     <mesh rotation-x={-Math.PI / 2} position-y={WORLD.waterY} material={material}>
-      <planeGeometry args={[R * 2, R * 2, 140, 140]} />
+      <planeGeometry args={[size, size, 220, 220]} />
     </mesh>
   )
 }
 
-function LandSlab({ poly }: { poly: typeof WEST_LAND }) {
+function LandSlab({ poly, ground }: { poly: typeof WEST_LAND; ground: THREE.Material }) {
   const geometry = useMemo(() => {
     const depth = -WORLD.seabedY - 0.25
     const g = new THREE.ExtrudeGeometry(shapeFromXZ(poly), {
@@ -82,11 +59,46 @@ function LandSlab({ poly }: { poly: typeof WEST_LAND }) {
   }, [poly])
 
   const materials = useMemo(
-    () => [createGroundMaterial(), new THREE.MeshLambertMaterial({ color: palette.stone })],
-    [],
+    () => [ground, new THREE.MeshLambertMaterial({ color: palette.stone })],
+    [ground],
   )
 
   useLayoutEffect(() => () => geometry.dispose(), [geometry])
 
   return <mesh geometry={geometry} material={materials} receiveShadow />
 }
+
+/**
+ * Distant countryside and mountains. The grid sits 0.35 below the land slab,
+ * so where the ground is flat the slab hides it and only hills rise through;
+ * off the coast it drops under the sea, giving the Hai Van massif real cliffs.
+ */
+function FarTerrain({ ground }: { ground: THREE.Material }) {
+  const geometry = useMemo(() => {
+    const size = FAR * 2
+    const segments = 176
+    const g = new THREE.PlaneGeometry(size, size, segments, segments)
+    g.rotateX(-Math.PI / 2)
+    const pos = g.getAttribute('position') as THREE.BufferAttribute
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i)
+      const z = pos.getZ(i)
+      // Around the city the hills are flat, so the grid is hidden either way
+      // (under the land slab or under the sea): skip the polygon tests there.
+      const h = farTerrainHeight(x, z)
+      if (h <= 0) {
+        pos.setY(i, -6)
+        continue
+      }
+      const onLand = pointInPolygon(x, z, WEST_LAND) || pointInPolygon(x, z, EAST_LAND)
+      pos.setY(i, onLand ? h - 0.35 : -6)
+    }
+    g.computeVertexNormals()
+    return g
+  }, [])
+
+  useLayoutEffect(() => () => geometry.dispose(), [geometry])
+
+  return <mesh geometry={geometry} material={ground} receiveShadow />
+}
+

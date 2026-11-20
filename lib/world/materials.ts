@@ -49,7 +49,11 @@ function injectWorldPos(shader: THREE.WebGLProgramParametersWithUniforms) {
 /* Ground                                                                    */
 /* ------------------------------------------------------------------------ */
 
-/** Grass with soft, large-scale tonal variation so the land never reads flat. */
+/**
+ * Ground: natural grass with tonal variation around the city, turning into a
+ * patchwork of rice paddies, crops and bare soil (with field borders) out in
+ * the countryside — the way the land around Da Nang reads from the air.
+ */
 export function createGroundMaterial() {
   const m = new THREE.MeshLambertMaterial({ color: palette.grass })
   m.onBeforeCompile = (shader) => {
@@ -57,9 +61,30 @@ export function createGroundMaterial() {
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <color_fragment>',
       `#include <color_fragment>
-      float gN = wNoise(vWPos.xz * 0.11) * 0.65 + wNoise(vWPos.xz * 0.37) * 0.35;
-      diffuseColor.rgb *= 0.9 + gN * 0.2;
-      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.91, 0.72), smoothstep(0.62, 0.9, gN) * 0.35);`,
+      float gN = wNoise(vWPos.xz * 0.09) * 0.55 + wNoise(vWPos.xz * 0.31) * 0.3 + wNoise(vWPos.xz * 1.9) * 0.15;
+      vec3 grass = diffuseColor.rgb * (0.78 + gN * 0.36);
+      grass = mix(grass, vec3(0.30, 0.29, 0.13), smoothstep(0.66, 0.92, gN) * 0.45);
+
+      float rural = smoothstep(58.0, 92.0, length(vWPos.xz));
+      vec2 fp = vWPos.xz * vec2(0.105, 0.07) + vec2(wNoise(vWPos.xz * 0.015) * 3.0, 0.0);
+      vec2 cell = floor(fp);
+      vec2 f = fract(fp);
+      float h = wHash(cell);
+      vec3 field = mix(vec3(0.09, 0.20, 0.04), vec3(0.24, 0.30, 0.07), h);
+      field = mix(field, vec3(0.20, 0.15, 0.08), step(0.86, h));
+      field *= 0.9 + wNoise(vWPos.xz * 0.8) * 0.2;
+      float border = 1.0 - step(0.05, f.x) * step(0.05, f.y);
+      field = mix(field, vec3(0.16, 0.17, 0.09), border * 0.8);
+      vec3 ground = mix(grass, field, rural);
+
+      // Far hills and mountains: forest on the slopes, bare rock where steep or high.
+      float hill = smoothstep(0.6, 3.0, vWPos.y);
+      vec3 forest = mix(vec3(0.045, 0.085, 0.03), vec3(0.08, 0.13, 0.045), wNoise(vWPos.xz * 0.06));
+      ground = mix(ground, forest, hill);
+      float rock = (1.0 - smoothstep(0.55, 0.78, vWNormal.y)) * smoothstep(4.0, 12.0, vWPos.y);
+      rock = max(rock, smoothstep(48.0, 70.0, vWPos.y));
+      ground = mix(ground, vec3(0.20, 0.19, 0.17) * (0.85 + wNoise(vWPos.xz * 0.3) * 0.3), clamp(rock, 0.0, 1.0));
+      diffuseColor.rgb = ground;`,
     )
   }
   m.customProgramCacheKey = () => 'world-ground'
@@ -138,29 +163,65 @@ export function glowColor(hex: string, k = GLOW) {
 /* ------------------------------------------------------------------------ */
 
 /**
- * Walls with a procedural window grid in world space: glass-tinted by day,
- * with a warm glow on a random subset so the skyline feels lived in.
+ * Realistic facades, all procedural, per building instance:
+ * - low and mid-rise: punched windows floor by floor, concrete floor bands,
+ *   open shopfronts on the ground floor (Da Nang's tube-house streets);
+ * - high-rise: mostly glass curtain walls with mullions and spandrels.
+ * Glass reflects the sky with a fresnel term, so towers pick up the sky's
+ * colour at grazing angles the way real glazing does.
  */
 export function createBuildingMaterial() {
   const m = new THREE.MeshLambertMaterial({ color: '#ffffff' })
   m.onBeforeCompile = (shader) => {
     injectWorldPos(shader)
     shader.uniforms.uWindow = { value: new THREE.Color(palette.window) }
+    shader.uniforms.uSkyRefl = { value: new THREE.Color(palette.sky.horizon) }
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vInst;\nvarying float vHeight;')
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        #ifdef USE_INSTANCING
+          vInst = instanceMatrix[3].xyz;
+          vHeight = length(instanceMatrix[1].xyz);
+        #else
+          vInst = vec3(0.0);
+          vHeight = 6.0;
+        #endif`,
+      )
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uWindow;')
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform vec3 uWindow;\nuniform vec3 uSkyRefl;\nvarying vec3 vInst;\nvarying float vHeight;',
+      )
       .replace(
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
         vec3 wn = normalize(vWNormal);
         float side = 1.0 - step(0.5, abs(wn.y));
-        vec2 cell = vec2(abs(wn.x) > 0.5 ? vWPos.z : vWPos.x, vWPos.y - 0.12);
-        vec2 grid = cell * vec2(2.1, 1.85);
-        vec2 g = fract(grid);
-        float win = step(0.28, g.x) * step(g.x, 0.72) * step(0.3, g.y) * step(g.y, 0.74);
-        win *= side * step(0.32, vWPos.y);
-        float lit = step(0.58, wHash(floor(grid) + floor(vWPos.xz * 0.37) * 7.0));
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.74, 0.82), win * 0.55);
-        totalEmissiveRadiance += uWindow * win * lit * 0.55;`,
+        float seed = wHash(floor(vInst.xz * 3.1) + 17.0);
+        float tower = step(4.2, vHeight) * step(seed, 0.7);
+        float u = abs(wn.x) > 0.5 ? vWPos.z : vWPos.x;
+        float floorH = 0.3;
+        float fy = fract(vWPos.y / floorH);
+        float level = floor(vWPos.y / floorH);
+        float fx = fract(u * 2.6 + seed * 7.0);
+
+        float punched = step(0.2, fx) * step(fx, 0.8) * step(0.3, fy) * step(fy, 0.8);
+        float shop = step(0.08, fx) * step(fx, 0.92) * step(0.05, fy) * step(fy, 0.86);
+        punched = mix(punched, shop, step(level, 0.5));
+        float curtain = step(0.07, fract(u * 3.4)) * step(0.14, fy);
+        float glass = mix(punched, curtain, tower) * side * step(0.02, vWPos.y);
+
+        float band = (1.0 - step(0.1, fy)) * side * (1.0 - tower);
+        vec3 glassTint = mix(vec3(0.035, 0.06, 0.08), vec3(0.06, 0.10, 0.12), seed);
+        diffuseColor.rgb = mix(diffuseColor.rgb * (1.0 - band * 0.18), glassTint, glass);
+
+        vec3 V = normalize(vViewPosition);
+        float fres = pow(1.0 - clamp(abs(dot(normal, V)), 0.0, 1.0), 3.0);
+        totalEmissiveRadiance += uSkyRefl * glass * (0.05 + 0.55 * fres) * (0.6 + 0.4 * tower);
+        float lit = step(0.86, wHash(vec2(level, floor(u * 2.6)) + vInst.xz));
+        totalEmissiveRadiance += uWindow * glass * lit * 0.06 * (1.0 - tower);`,
       )
   }
   m.customProgramCacheKey = () => 'world-building'
@@ -207,13 +268,13 @@ export function createSwayMaterial(color = '#ffffff', amount = 0.06) {
  * a depth buffer, built once from the same polygons as the land.
  */
 function createShoreTexture() {
-  const size = 1024
+  const size = 2048
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
-  const R = WORLD.radius
+  const R = WORLD.shoreExtent
   const toPx = ([x, z]: XZ) => [((x + R) / (2 * R)) * size, ((z + R) / (2 * R)) * size] as const
   ctx.fillStyle = '#000'
   ctx.fillRect(0, 0, size, size)
@@ -238,9 +299,10 @@ function createShoreTexture() {
     ctx.restore()
   }
   // Red: a wide soft halo for the shallows. Green: a tight one for the foam line.
-  draw(48, 0.6, '#f00')
-  draw(18, 0.5, '#f00')
-  draw(7, 1, '#0f0')
+  // (Blur radii are in pixels: ~4.3 px per world unit at this extent.)
+  draw(24, 0.6, '#f00')
+  draw(9, 0.5, '#f00')
+  draw(3.5, 1, '#0f0')
   const tex = new THREE.CanvasTexture(canvas)
   // Canvas row 0 is the world's north edge, and the shader samples it that way.
   tex.flipY = false
@@ -260,10 +322,10 @@ export function createWaterMaterial() {
       {
         uTime: { value: 0 },
         uShore: { value: null },
-        uRadius: { value: WORLD.radius },
+        uExtent: { value: WORLD.shoreExtent },
         uDeep: { value: new THREE.Color(palette.deepSea) },
         uSea: { value: new THREE.Color(palette.turquoise) },
-        uShallow: { value: new THREE.Color('#9FE0D6') },
+        uShallow: { value: new THREE.Color('#3f948f') },
         uFoam: { value: new THREE.Color(palette.warmWhite) },
         uSky: { value: new THREE.Color(palette.ocean) },
         uSkyTop: { value: new THREE.Color(palette.sky.top) },
@@ -292,7 +354,7 @@ export function createWaterMaterial() {
       #include <fog_pars_fragment>
       uniform float uTime;
       uniform sampler2D uShore;
-      uniform float uRadius;
+      uniform float uExtent;
       uniform vec3 uDeep;
       uniform vec3 uSea;
       uniform vec3 uShallow;
@@ -306,27 +368,28 @@ export function createWaterMaterial() {
       ${NOISE_GLSL}
       void main() {
         float r = length(vWPos.xz);
-        if (r > uRadius) discard;
-        vec2 uv = (vWPos.xz + uRadius) / (2.0 * uRadius);
-        vec4 mask = texture2D(uShore, uv);
+        vec2 uv = (vWPos.xz + uExtent) / (2.0 * uExtent);
+        // Outside the mask the sea is open water: no shallows, no foam.
+        float inMask = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
+        vec4 mask = texture2D(uShore, clamp(uv, 0.0, 1.0)) * inMask;
         float shore = mask.r;
         float edge = mask.g;
 
         // Open sea darkens toward the rim; shallows glow turquoise.
-        vec3 col = mix(uSea, uDeep, smoothstep(26.0, 58.0, r) * (1.0 - shore));
+        vec3 col = mix(uSea, uDeep, smoothstep(30.0, 220.0, r) * (1.0 - shore));
         col = mix(col, uShallow, smoothstep(0.08, 0.55, shore) * 0.8);
 
         // Sky-tinted glints drifting across the surface.
         float n = wNoise(vWPos.xz * 0.45 + vec2(uTime * 0.12, -uTime * 0.08));
         float n2 = wNoise(vWPos.xz * 1.3 - vec2(uTime * 0.2, uTime * 0.05));
         col = mix(col, uSky, smoothstep(0.55, 0.85, n) * 0.22);
-        col += smoothstep(0.86, 0.97, n2 * n) * 0.18;
+        col += smoothstep(0.86, 0.97, n2 * n) * 0.05;
 
         // Foam: a thin line hugging every shore, with ripples lapping in.
         float band = sin(edge * 18.0 - uTime * 1.6 + n * 4.0) * 0.5 + 0.5;
         float foam = smoothstep(0.18, 0.4, edge) * smoothstep(0.6, 0.95, band) * 0.7;
         foam += smoothstep(0.42, 0.6, edge);
-        col = mix(col, uFoam, clamp(foam, 0.0, 1.0) * 0.8);
+        col = mix(col, uFoam, clamp(foam, 0.0, 1.0) * 0.55);
 
         // Ripple normal from the noise gradient, for reflections and glints.
         vec2 rp = vWPos.xz * 0.9 + vec2(uTime * 0.25, uTime * 0.18);
@@ -343,9 +406,6 @@ export function createWaterMaterial() {
         // Sun glints dancing on the ripples.
         float spec = pow(max(dot(R, uSunDir), 0.0), 260.0);
         col += uSunColor * spec * (1.0 - smoothstep(0.3, 0.7, shore));
-
-        // Thin bright lip at the platter edge.
-        col = mix(col, uFoam, smoothstep(uRadius - 0.9, uRadius, r) * 0.6);
 
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>

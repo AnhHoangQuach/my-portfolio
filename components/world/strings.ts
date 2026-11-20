@@ -5,8 +5,8 @@ import type { LandmarkId } from '@/lib/world/landmarks'
  * props — the translation catalogue never ships to the browser.
  */
 export interface WorldStrings {
-  brand: string
-  tagline: string
+  /** Small label above the name / title, e.g. "Portfolio". */
+  kicker: string
   identity: { name: string; initials: string; role: string; location: string }
   loading: { title: string; stages: string[] }
   intro: { title: string; subtitle: string; explore: string; skip: string }

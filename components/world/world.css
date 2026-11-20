@@ -230,7 +230,7 @@ html[data-text-mode] #world-text {
   outline: none;
 }
 html[data-text-mode] #world-text h1 {
-  font-family: var(--font-heading);
+  font-family: inherit;
   font-size: 1.9rem;
   font-weight: 700;
   line-height: 1.15;
@@ -239,7 +239,7 @@ html[data-text-mode] #world-text > section {
   margin-top: 2.5rem;
 }
 html[data-text-mode] #world-text > section > h2 {
-  font-family: var(--font-heading);
+  font-family: inherit;
   font-size: 1.35rem;
   font-weight: 700;
   margin-bottom: 0.75rem;

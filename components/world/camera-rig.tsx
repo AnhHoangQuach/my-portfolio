@@ -19,7 +19,8 @@ const LIMITS = {
   minDistance: 6,
   maxDistance: 340,
   minPolarAngle: 0.22,
-  maxPolarAngle: 1.26,
+  // Low enough to look across the city to the horizon, never under the ground.
+  maxPolarAngle: 1.4,
 }
 
 /**
@@ -216,7 +217,7 @@ export function CameraRig() {
     c.dollyToCursor = false
     c.enabled = false
     c.maxDistance = 600
-    c.setBoundary(new THREE.Box3(new THREE.Vector3(-48, -1, -50), new THREE.Vector3(48, 14, 48)))
+    c.setBoundary(new THREE.Box3(new THREE.Vector3(-110, -1, -90), new THREE.Vector3(90, 30, 120)))
     // Wheel input doesn't emit `controlstart`, so listen for it directly.
     const onInput = () => rig.current && takeOver(rig.current)
     const dom = get().gl.domElement

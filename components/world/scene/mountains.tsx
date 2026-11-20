@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 import {
   EAST_LAND,
@@ -250,38 +250,53 @@ function LadyBuddha({ position }: { position: [number, number, number] }) {
 /* ------------------------------------------------------------------------ */
 
 function peakGeometry(p: Peak) {
-  const g = new THREE.IcosahedronGeometry(1, 3)
+  // Higher subdivision + welded vertices for smooth, craggy karst forms.
+  // UVs and normals are dropped first: they differ across the seams and
+  // would stop the vertices welding (normals are recomputed, rock is
+  // textured in world space).
+  const base = new THREE.IcosahedronGeometry(1, 4)
+  base.deleteAttribute('uv')
+  base.deleteAttribute('normal')
+  const g = mergeVertices(base)
   const pos = g.getAttribute('position') as THREE.BufferAttribute
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i)
     const y = pos.getY(i)
     const z = pos.getZ(i)
-    const n = 1 + positionNoise(x, y, z, p.seed) * 0.26
+    // Two octaves: big buttresses plus fine crags.
+    const n =
+      1 + positionNoise(x, y, z, p.seed) * 0.26 + positionNoise(x * 2.7, y * 2.7, z * 2.7, p.seed + 5) * 0.08
     const t = Math.max(0, Math.min(1, (y * n + 1) / 2))
     // Karst profile: steep walls, a rounded crown.
     const taper = 1.1 - 0.62 * Math.pow(t, 1.5)
     pos.setXYZ(i, x * n * p.r * taper + p.x, t * p.h - 0.35, z * n * p.r * taper + p.z)
   }
-  // Per-face colour: green where it's flat enough for plants to cling.
-  const pg = g
-  pg.computeVertexNormals()
-  const ppos = pg.getAttribute('position')
-  const nrm = pg.getAttribute('normal')
-  const colors = new Float32Array(ppos.count * 3)
+  g.computeVertexNormals()
+
+  // Per-vertex colour: jungle clinging to every ledge and the upper slopes,
+  // pale limestone on the cliffs, darker rock in the clefts.
+  const nrm = g.getAttribute('normal')
+  const colors = new Float32Array(pos.count * 3)
   const stone = new THREE.Color(palette.limestone)
   const shade = new THREE.Color(palette.limestoneShade)
-  const green = new THREE.Color('#8DBF7E')
+  const jungle = new THREE.Color('#3f5d2f')
+  const moss = new THREE.Color('#5d7a3c')
   const c = new THREE.Color()
-  const r = rng(p.seed)
-  for (let i = 0; i < ppos.count; i += 3) {
-    const ny = (nrm.getY(i) + nrm.getY(i + 1) + nrm.getY(i + 2)) / 3
-    const y = (ppos.getY(i) + ppos.getY(i + 1) + ppos.getY(i + 2)) / 3
-    if (ny > 0.7 && y > 1 && r() > 0.3) c.copy(green).offsetHSL(0, 0, (r() - 0.5) * 0.08)
-    else c.copy(stone).lerp(shade, r() * 0.8)
-    for (let k = 0; k < 3; k++) colors.set([c.r, c.g, c.b], (i + k) * 3)
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i)
+    const y = pos.getY(i)
+    const z = pos.getZ(i)
+    const ny = nrm.getY(i)
+    const v = positionNoise(x * 0.9, y * 0.9, z * 0.9, p.seed + 9) * 0.5 + 0.5
+    const ledge = THREE.MathUtils.smoothstep(ny, 0.25, 0.65)
+    const high = THREE.MathUtils.smoothstep(y / p.h, 0.15, 0.55)
+    const green = Math.min(1, ledge * (0.55 + 0.45 * high) + (v > 0.62 ? 0.35 : 0))
+    c.copy(stone).lerp(shade, Math.max(0, 0.6 - ny) * 0.9 + v * 0.2)
+    c.lerp(v > 0.5 ? jungle : moss, green)
+    colors.set([c.r, c.g, c.b], i * 3)
   }
-  pg.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-  return pg
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  return g
 }
 
 /** Marble Mountains (Ngu Hanh Son) — EXPERIENCE. */
@@ -290,7 +305,7 @@ export function MarbleMountains() {
   const limestone = useMemo(
     () =>
       withSurfaceDetail(
-        new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
+        new THREE.MeshLambertMaterial({ vertexColors: true }),
         'limestone',
       ),
     [],

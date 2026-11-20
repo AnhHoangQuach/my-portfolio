@@ -17,7 +17,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Identity
 
 - **Project**: Portfolio of Quach Hoang Anh (Hayes) at `hayes.io.vn`
-- **What it is**: a single page — an interactive 3D miniature of Da Nang ("Da Nang DevQuest") — in English (`/`) and Japanese (`/ja`)
+- **What it is**: a single page — an interactive 3D Da Nang with procedural city-builder realism — in English (`/`) and Japanese (`/ja`)
 - **Stack**: Next.js 16.4.6 · React 19.3 · three.js + React Three Fiber + drei · postprocessing + n8ao · Zustand · Tailwind CSS v4 · next-intl 4.15
 - **Toolchain**: Node 26 (`.nvmrc`) · pnpm 12 (`packageManager` in package.json)
 

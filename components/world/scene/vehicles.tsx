@@ -4,8 +4,8 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-import { WORLD, riverParallel, riverSamples, rng, type XZ } from '@/lib/world/geo'
-import { BRIDGES, coastalRoad, riverRoadX } from '@/lib/world/layout'
+import { WORLD, riverSamples, rng, type XZ } from '@/lib/world/geo'
+import { BRIDGES, riverRoadX, roads } from '@/lib/world/layout'
 import { palette } from '@/lib/world/palette'
 import { DECK_TOP } from './bridges'
 import { DRAGON_DECK_TOP } from './dragon-bridge'
@@ -55,96 +55,174 @@ function outAndBack(line: XZ[], lane: number) {
 }
 
 /** Riverfront circuit: north on the west bank, over the Han River Bridge, south, back over Tran Thi Ly. */
-function riverCircuit(lane: number, reverse: boolean) {
-  const west = riverParallel(1.75, 0, 1).filter(([, z]) => z < BRIDGES.tranThiLy && z > BRIDGES.hanRiver)
-  const east = riverParallel(-1.75, 0, 1)
-    .filter(([, z]) => z < BRIDGES.tranThiLy && z > BRIDGES.hanRiver)
-    .reverse()
-  const pts: XZ[] = [...west, ...east]
-  const ordered = reverse ? [...pts].reverse() : pts
-  return loop(offsetLine(ordered, lane))
+/* ------------------------------------------------------------------------ */
+/* Traffic                                                                   */
+/* ------------------------------------------------------------------------ */
+
+/** A closed lane: out along one side of a road, back along the other. */
+interface Lane {
+  pts: XZ[]
+  /** Cumulative length at each point. */
+  cum: number[]
+  length: number
 }
 
-interface Mover {
-  curve: THREE.CatmullRomCurve3
+function makeLane(line: XZ[], offset: number): Lane {
+  const pts = [...offsetLine(line, offset), ...offsetLine([...line].reverse(), offset)]
+  pts.push(pts[0])
+  const cum = [0]
+  for (let i = 1; i < pts.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))
+  }
+  return { pts, cum, length: cum[cum.length - 1] }
+}
+
+interface Vehicle {
+  lane: Lane
+  /** Starting distance along the lane. */
+  start: number
   speed: number
-  u: number
+  bike: boolean
   color: string
+  rider: string
 }
 
-/* ------------------------------------------------------------------------ */
-/* Cars                                                                      */
-/* ------------------------------------------------------------------------ */
+/** Lines traffic drives on: every road plus the three bridge spans. */
+function trafficLines(): { line: XZ[]; width: number }[] {
+  const lines = roads.filter((rd) => rd.kind === 'road').map((rd) => ({ line: rd.line, width: rd.width }))
+  for (const z of Object.values(BRIDGES)) {
+    lines.push({ line: [[riverRoadX('west', z), z], [riverRoadX('east', z), z]], width: 1.4 })
+  }
+  return lines
+}
 
+/**
+ * City traffic, Da Nang style: mostly motorbikes, plus cars, on every road
+ * and across the bridges, in both directions. Two instanced meshes per
+ * vehicle type; positions advance along precomputed lane polylines.
+ */
 export function Cars() {
-  const movers = useMemo<Mover[]>(() => {
+  const vehicles = useMemo<Vehicle[]>(() => {
     const r = rng(42)
-    const dragonAxis: XZ[] = [
-      [-36, 0],
-      [riverRoadX('west', 0), 0],
-      [riverRoadX('east', 0), 0],
-      [20.2, 0],
-    ]
-    const routes = [
-      { curve: riverCircuit(0.32, false), cars: 5 },
-      { curve: riverCircuit(-0.32, true), cars: 4 },
-      { curve: outAndBack(dragonAxis, 0.42), cars: 6 },
-      { curve: outAndBack(coastalRoad.filter(([, z]) => z < 26), 0.32), cars: 4 },
-    ]
-    return routes.flatMap(({ curve, cars }) => {
-      const len = curve.getLength()
-      return Array.from({ length: cars }, (_, i) => ({
-        curve,
-        speed: (2.1 + r() * 0.8) / len,
-        u: i / cars + r() * 0.05,
-        color: palette.cars[Math.floor(r() * palette.cars.length)],
-      }))
-    })
+    const out: Vehicle[] = []
+    for (const { line, width } of trafficLines()) {
+      const carLane = makeLane(line, width * 0.22)
+      const bikeLane = makeLane(line, width * 0.36)
+      const mid = line[Math.floor(line.length / 2)]
+      // Dense in town, thinning out into the countryside.
+      const density = Math.max(0.12, 1 - Math.hypot(mid[0], mid[1]) / 160)
+      const cars = Math.round((carLane.length / 9) * density)
+      const bikes = Math.round((bikeLane.length / 3.2) * density)
+      for (let i = 0; i < cars; i++) {
+        out.push({
+          lane: carLane, start: r() * carLane.length, speed: 2 + r() * 1.2, bike: false,
+          color: palette.cars[Math.floor(r() * palette.cars.length)], rider: '#1d1f22',
+        })
+      }
+      for (let i = 0; i < bikes; i++) {
+        out.push({
+          lane: bikeLane, start: r() * bikeLane.length, speed: 1.5 + r() * 1.1, bike: true,
+          color: palette.bikes[Math.floor(r() * palette.bikes.length)],
+          rider: ['#e8e2d0', '#3b5f8a', '#c8423a', '#2b2b2b', '#e1b94a', '#6f8f5a'][Math.floor(r() * 6)],
+        })
+      }
+    }
+    return out
   }, [])
 
-  const bodies = useRef<THREE.InstancedMesh>(null)
-  const cabins = useRef<THREE.InstancedMesh>(null)
-  const bodyGeometry = useMemo(() => new THREE.BoxGeometry(0.62, 0.2, 0.32).translate(0, 0.14, 0), [])
-  const cabinGeometry = useMemo(() => new THREE.BoxGeometry(0.34, 0.16, 0.28).translate(-0.04, 0.32, 0), [])
-  const d = useMemo(() => new THREE.Object3D(), [])
-  const p = useMemo(() => new THREE.Vector3(), [])
-  const t = useMemo(() => new THREE.Vector3(), [])
-  const colored = useRef(false)
+  const cars = useMemo(() => vehicles.filter((v) => !v.bike), [vehicles])
+  const bikes = useMemo(() => vehicles.filter((v) => v.bike), [vehicles])
+
+  const carBody = useRef<THREE.InstancedMesh>(null)
+  const carCabin = useRef<THREE.InstancedMesh>(null)
+  const bikeBody = useRef<THREE.InstancedMesh>(null)
+  const bikeRider = useRef<THREE.InstancedMesh>(null)
+  const geo = useMemo(
+    () => ({
+      carBody: new THREE.BoxGeometry(0.5, 0.15, 0.25).translate(0, 0.11, 0),
+      carCabin: new THREE.BoxGeometry(0.28, 0.12, 0.21).translate(-0.03, 0.24, 0),
+      bikeBody: new THREE.BoxGeometry(0.2, 0.07, 0.055).translate(0, 0.07, 0),
+      bikeRider: new THREE.BoxGeometry(0.07, 0.15, 0.07).translate(-0.02, 0.17, 0),
+    }),
+    [],
+  )
+  /**
+   * Per-frame state lives here, created on the first frame: distance along
+   * the lane and a segment-index cache (progress is monotonic, so lookups
+   * stay O(1)). The vehicle descriptors themselves are never mutated.
+   */
+  const sim = useRef<{
+    d: THREE.Object3D
+    colored: boolean
+    cars: { list: Vehicle[]; s: Float32Array; seg: Int32Array }
+    bikes: { list: Vehicle[]; s: Float32Array; seg: Int32Array }
+  } | null>(null)
 
   useFrame((_, delta) => {
-    const b = bodies.current
-    const c = cabins.current
-    if (!b || !c) return
-    const dt = Math.min(delta, 0.1)
-    movers.forEach((m, i) => {
-      m.u = (m.u + m.speed * dt) % 1
-      m.curve.getPointAt(m.u, p)
-      m.curve.getTangentAt(m.u, t)
-      d.position.set(p.x, roadY(p.x, p.z), p.z)
-      d.rotation.set(0, Math.atan2(-t.z, t.x), 0)
-      d.updateMatrix()
-      b.setMatrixAt(i, d.matrix)
-      c.setMatrixAt(i, d.matrix)
-      if (!colored.current) {
-        b.setColorAt(i, new THREE.Color(m.color))
-        c.setColorAt(i, new THREE.Color(palette.warmWhite))
-      }
+    const meshes = [carBody.current, carCabin.current, bikeBody.current, bikeRider.current]
+    if (meshes.some((m) => !m)) return
+    const [cb, cc, bb, br] = meshes as THREE.InstancedMesh[]
+    const init = (list: Vehicle[]) => ({
+      list,
+      s: Float32Array.from(list, (v) => v.start),
+      seg: new Int32Array(list.length),
     })
-    if (!colored.current) {
-      colored.current = true
-      if (b.instanceColor) b.instanceColor.needsUpdate = true
-      if (c.instanceColor) c.instanceColor.needsUpdate = true
+    sim.current ??= { d: new THREE.Object3D(), colored: false, cars: init(cars), bikes: init(bikes) }
+    const state = sim.current
+    const d = state.d
+    const dt = Math.min(delta, 0.1)
+    const place = (
+      st: { list: Vehicle[]; s: Float32Array; seg: Int32Array },
+      body: THREE.InstancedMesh,
+      top: THREE.InstancedMesh,
+    ) => {
+      st.list.forEach((v, i) => {
+        const L = v.lane
+        const s = (st.s[i] + v.speed * dt) % L.length
+        st.s[i] = s
+        let seg = st.seg[i]
+        if (s < L.cum[seg]) seg = 0
+        while (seg < L.pts.length - 2 && L.cum[seg + 1] < s) seg++
+        st.seg[i] = seg
+        const a = L.pts[seg]
+        const b = L.pts[seg + 1]
+        const segLen = L.cum[seg + 1] - L.cum[seg] || 1
+        const k = (s - L.cum[seg]) / segLen
+        const x = a[0] + (b[0] - a[0]) * k
+        const z = a[1] + (b[1] - a[1]) * k
+        d.position.set(x, roadY(x, z), z)
+        d.rotation.set(0, Math.atan2(-(b[1] - a[1]), b[0] - a[0]), 0)
+        d.updateMatrix()
+        body.setMatrixAt(i, d.matrix)
+        top.setMatrixAt(i, d.matrix)
+        if (!state.colored) {
+          body.setColorAt(i, new THREE.Color(v.color))
+          top.setColorAt(i, new THREE.Color(v.bike ? v.rider : '#1d2227'))
+        }
+      })
+      body.instanceMatrix.needsUpdate = true
+      top.instanceMatrix.needsUpdate = true
     }
-    b.instanceMatrix.needsUpdate = true
-    c.instanceMatrix.needsUpdate = true
+    place(state.cars, cb, cc)
+    place(state.bikes, bb, br)
+    if (!state.colored) {
+      state.colored = true
+      for (const m of [cb, cc, bb, br]) if (m.instanceColor) m.instanceColor.needsUpdate = true
+    }
   })
 
   return (
     <group>
-      <instancedMesh ref={bodies} args={[bodyGeometry, undefined, movers.length]} castShadow frustumCulled={false}>
+      <instancedMesh ref={carBody} args={[geo.carBody, undefined, cars.length]} castShadow frustumCulled={false}>
         <meshLambertMaterial />
       </instancedMesh>
-      <instancedMesh ref={cabins} args={[cabinGeometry, undefined, movers.length]} frustumCulled={false}>
+      <instancedMesh ref={carCabin} args={[geo.carCabin, undefined, cars.length]} frustumCulled={false}>
+        <meshLambertMaterial />
+      </instancedMesh>
+      <instancedMesh ref={bikeBody} args={[geo.bikeBody, undefined, bikes.length]} frustumCulled={false}>
+        <meshLambertMaterial />
+      </instancedMesh>
+      <instancedMesh ref={bikeRider} args={[geo.bikeRider, undefined, bikes.length]} frustumCulled={false}>
         <meshLambertMaterial />
       </instancedMesh>
     </group>

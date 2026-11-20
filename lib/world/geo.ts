@@ -10,8 +10,8 @@ import * as THREE from 'three'
 export type XZ = readonly [number, number]
 
 export const WORLD = {
-  /** Radius of the circular diorama platter. */
-  radius: 60,
+  /** Half-size of the shoreline mask (foam, shallows) around the city. */
+  shoreExtent: 240,
   waterY: -0.5,
   seabedY: -2.2,
   landTop: 0,
@@ -147,24 +147,59 @@ export function riverBankDistance(x: number, z: number) {
 /* Land masses                                                               */
 /* ------------------------------------------------------------------------ */
 
-/** West bank: the dense city centre (Hai Chau), bounded by the bay to the north. */
+/**
+ * Beyond the city the Han River keeps running south, out of view. Only the
+ * land outline needs it, so it's a plain polyline rather than part of
+ * `riverCurve` (whose parameter the city layout depends on).
+ */
+const RIVER_SOUTH: XZ[] = [
+  [-26, 520],
+  [-20, 380],
+  [-12, 240],
+  [-15, 160],
+  [-10, 95],
+  [-6, 52],
+]
+const RIVER_SOUTH_HALF_WIDTH = 3.1
+
+function riverSouthBank(side: 1 | -1): XZ[] {
+  return RIVER_SOUTH.slice(0, -1).map((p, i) => {
+    const q = RIVER_SOUTH[i + 1]
+    const dx = q[0] - p[0]
+    const dz = q[1] - p[1]
+    const len = Math.hypot(dx, dz) || 1
+    // Same convention as RIVER_SAMPLES: (tz, -tx) points west for a northbound river.
+    return [p[0] + (dz / len) * side * RIVER_SOUTH_HALF_WIDTH, p[1] + (-dx / len) * side * RIVER_SOUTH_HALF_WIDTH] as const
+  })
+}
+
+/** Half-extent of the mainland, well past the haze at the horizon. */
+export const FAR = 520
+
+/** West bank: the city centre (Hai Chau) and the mainland behind it, up to Hai Van. */
 export const WEST_LAND: XZ[] = [
+  ...riverSouthBank(1),
   ...riverParallel(0.001).filter((_, i, a) => i % 4 === 0 || i === a.length - 1),
   [-6, -27.2],
   [-16, -25.6],
   [-28, -24],
   [-38, -19],
-  [-46, -9],
-  [-50, 4],
-  [-47, 18],
-  [-40, 30],
-  [-28, 40],
-  [-18, 47],
+  // The bay curls north-west toward the Hai Van massif.
+  [-52, -23],
+  [-74, -31],
+  [-98, -46],
+  [-118, -70],
+  [-132, -100],
+  [-140, -140],
+  [-150, -200],
+  [-FAR, -200],
+  [-FAR, FAR],
 ]
 
 /** Coastline of the east bank from south to north, ending at Son Tra's neck. */
 export const EAST_COAST: XZ[] = [
-  [19, 38],
+  [26, 50],
+  [22.4, 36],
   [22.6, 28],
   [24.6, 16],
   [25.6, 4],
@@ -172,14 +207,19 @@ export const EAST_COAST: XZ[] = [
   [24.8, -14],
 ]
 
-/** East bank: Son Tra district, My Khe beach and the Son Tra peninsula. */
+/** East bank: Son Tra district, My Khe beach, Son Tra and the coast toward Hoi An. */
 export const EAST_LAND: XZ[] = [
   ...riverParallel(-0.001)
     .filter((_, i, a) => i % 4 === 0 || i === a.length - 1)
     .reverse(),
-  [-1, 52],
-  [8, 49],
-  [15, 44],
+  ...riverSouthBank(-1).reverse(),
+  [150, FAR],
+  // Long straight beaches running south toward Hoi An.
+  [112, 400],
+  [82, 290],
+  [58, 190],
+  [42, 120],
+  [32, 78],
   ...EAST_COAST,
   // Son Tra peninsula, clockwise around the headland.
   [28, -20],
@@ -193,6 +233,11 @@ export const EAST_LAND: XZ[] = [
   [16.5, -30],
   [14, -25.6],
 ]
+
+/** Distance to the Han River south of the city (the stretch outside `riverCurve`). */
+export function southRiverDistance(x: number, z: number) {
+  return distanceToPolyline(x, z, RIVER_SOUTH) - RIVER_SOUTH_HALF_WIDTH
+}
 
 export function pointInPolygon(x: number, z: number, poly: readonly XZ[]) {
   let inside = false
@@ -282,6 +327,71 @@ export const MARBLE_PEAKS: Peak[] = [
   { x: 15, z: 22.6, r: 2.2, h: 7.2, seed: 41 },
   { x: 9.6, z: 35.8, r: 2.4, h: 4.9, seed: 53 },
 ]
+
+/* ------------------------------------------------------------------------ */
+/* Far terrain                                                               */
+/* ------------------------------------------------------------------------ */
+
+function hash2(x: number, z: number) {
+  const h = Math.sin(x * 127.1 + z * 311.7) * 43758.5453
+  return h - Math.floor(h)
+}
+
+function valueNoise(x: number, z: number) {
+  const xi = Math.floor(x)
+  const zi = Math.floor(z)
+  const xf = x - xi
+  const zf = z - zi
+  const u = xf * xf * (3 - 2 * xf)
+  const v = zf * zf * (3 - 2 * zf)
+  const a = hash2(xi, zi)
+  const b = hash2(xi + 1, zi)
+  const c = hash2(xi, zi + 1)
+  const d = hash2(xi + 1, zi + 1)
+  return lerp(lerp(a, b, u), lerp(c, d, u), v)
+}
+
+/** Ridged fractal noise in [0, 1]: sharp crests, soft valleys. */
+function ridged(x: number, z: number) {
+  let sum = 0
+  let amp = 0.5
+  let f = 1
+  for (let o = 0; o < 5; o++) {
+    const n = 1 - Math.abs(valueNoise(x * f, z * f) * 2 - 1)
+    sum += n * n * amp
+    amp *= 0.5
+    f *= 2.03
+  }
+  return sum
+}
+
+const smooth = (a: number, b: number, t: number) => {
+  const k = Math.max(0, Math.min(1, (t - a) / (b - a)))
+  return k * k * (3 - 2 * k)
+}
+
+const gauss = (x: number, z: number, cx: number, cz: number, r: number) =>
+  Math.exp(-((x - cx) ** 2 + (z - cz) ** 2) / (r * r))
+
+/**
+ * Height of the distant countryside and mountains. Flat around the city (so
+ * the extruded land and the far terrain meet cleanly), rising with distance:
+ * the Hai Van massif to the north-west above the bay, the Ba Na hills to the
+ * west, low rolling country to the south.
+ */
+export function farTerrainHeight(x: number, z: number) {
+  const r = Math.hypot(x, z)
+  const ramp = smooth(85, 210, r)
+  if (ramp <= 0) return 0
+  const relief = ridged(x * 0.011 + 3.1, z * 0.011 - 1.7)
+  // Peaks top out around 3–4x the tallest tower, as from Da Nang's riverfront.
+  const massifs =
+    40 * gauss(x, z, -235, -265, 130) + // Hai Van
+    46 * gauss(x, z, -380, 30, 160) + // Ba Na
+    16 * gauss(x, z, -160, 250, 140)
+  const rolling = 4 + 8 * valueNoise(x * 0.02, z * 0.02)
+  return ramp * (rolling + massifs) * (0.5 + 0.6 * relief)
+}
 
 /* ------------------------------------------------------------------------ */
 /* Geometry helpers                                                          */

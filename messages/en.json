@@ -25,20 +25,19 @@
     "description": "Open to senior backend, platform and full-stack roles. Fastest way to reach me is email — I answer within a day."
   },
   "world": {
-    "brand": "Da Nang DevQuest",
-    "tagline": "A Developer's Journey",
+    "kicker": "Portfolio",
     "initials": "HA",
     "location": "Da Nang, Vietnam",
     "loading": {
-      "title": "Loading the world",
-      "stage0": "Unrolling the map…",
-      "stage1": "Raising Son Tra's hills…",
-      "stage2": "Filling the Han River…",
-      "stage3": "Waking the dragon…",
-      "stage4": "Clearing the clouds…"
+      "title": "Loading the portfolio",
+      "stage0": "Loading my portfolio…",
+      "stage1": "Gathering projects…",
+      "stage2": "Compiling five years of experience…",
+      "stage3": "Sharpening the skills…",
+      "stage4": "Almost ready…"
     },
     "intro": {
-      "title": "Welcome to My World",
+      "title": "Welcome to My Portfolio",
       "subtitle": "Software Engineer • Building Things That Matter",
       "explore": "Explore My Journey",
       "skip": "Skip Intro"

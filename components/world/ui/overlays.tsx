@@ -44,12 +44,15 @@ export function LoadingScreen({ strings }: { strings: WorldStrings }) {
       <div className="world-cloud top-[26%] right-[6%] h-12 w-56 [animation-delay:-5s]" />
       <div className="world-cloud bottom-[18%] left-[18%] h-9 w-36 [animation-delay:-9s]" />
 
-      <div className="relative flex w-full max-w-sm flex-col items-center px-6 text-center">
+      <div className="relative flex w-full max-w-md flex-col items-center px-6 text-center">
         <p className="font-mono text-xs tracking-[0.3em] text-(--w-wood-dark) uppercase">
-          {strings.tagline}
+          {strings.kicker}
         </p>
-        <p className="mt-3 font-heading text-4xl font-bold tracking-tight text-(--w-ink) sm:text-5xl">
-          {strings.brand}
+        <p className="mt-3 font-heading text-4xl font-bold tracking-tight text-balance text-(--w-ink) sm:text-5xl">
+          {strings.identity.name}
+        </p>
+        <p className="mt-2 text-sm font-medium text-(--w-ink-soft)">
+          {strings.identity.role} · {strings.identity.location}
         </p>
         <div
           className="mt-8 h-3 w-full overflow-hidden rounded-full border-2 border-(--w-wood)/40 bg-(--w-paper)/70"
@@ -124,7 +127,7 @@ export function IntroOverlay({ strings }: { strings: WorldStrings }) {
               style={delay(0)}
               className="world-rise rounded-full bg-(--w-paper)/80 px-3 py-1 font-mono text-[11px] tracking-[0.28em] text-(--w-wood-dark) uppercase shadow-sm"
             >
-              {strings.brand}
+              {strings.kicker}
             </p>
             <h2
               id="world-welcome-title"

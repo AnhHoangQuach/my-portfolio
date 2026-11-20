@@ -6,10 +6,8 @@ import {
   BloomEffect,
   EffectComposer,
   EffectPass,
-  KernelSize,
   RenderPass,
   SMAAEffect,
-  TiltShiftEffect,
   ToneMappingEffect,
   ToneMappingMode,
   VignetteEffect,
@@ -18,17 +16,17 @@ import { N8AOPostPass } from 'n8ao'
 import * as THREE from 'three'
 
 /**
- * The "photograph of a handmade miniature" pass:
+ * The realism pass (high tier):
  * - N8AO: contact shadows where buildings, trees and rocks meet the ground.
- * - Bloom: only HDR light sources (lamps, lanterns, fire, glints) exceed the
- *   threshold, so sunlit walls never glow.
- * - Tilt-shift: the narrow horizontal focus band of macro photography.
- * - Neutral tone mapping, a soft vignette, SMAA for clean edges.
+ * - ACES filmic tone mapping (matching the renderer's), a light vignette,
+ *   SMAA for clean edges. No tilt-shift: the whole frame stays sharp.
+ * - Bloom: only HDR light sources (lamps, lanterns, fire, glints).
  *
  * Built directly on `postprocessing` (which tree-shakes) rather than the
  * React wrapper, whose single bundled module registers every effect it ships.
  * Only mounted on the high tier, and loaded as its own chunk.
  */
+
 /** Builds the full effect chain. Called from an effect, never during render. */
 function createComposer(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
   const c = new EffectComposer(gl, { frameBufferType: THREE.HalfFloatType, multisampling: 0 })
@@ -65,21 +63,8 @@ function createComposer(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THR
   c.addPass(
     new EffectPass(
       camera,
-      new TiltShiftEffect({
-        offset: 0.02,
-        // A wide sharp band; only the top and bottom edges soften.
-        focusArea: 0.78,
-        feather: 0.3,
-        kernelSize: KernelSize.SMALL,
-        resolutionScale: 0.5,
-      }),
-    ),
-  )
-  c.addPass(
-    new EffectPass(
-      camera,
-      new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL }),
-      new VignetteEffect({ offset: 0.32, darkness: 0.38 }),
+      new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }),
+      new VignetteEffect({ offset: 0.3, darkness: 0.22 }),
     ),
   )
   c.addPass(new EffectPass(camera, new SMAAEffect()))

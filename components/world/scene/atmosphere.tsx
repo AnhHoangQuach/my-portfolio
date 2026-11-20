@@ -3,10 +3,10 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { Sky as SkyImpl } from 'three/examples/jsm/objects/Sky.js'
 
-import { SUN_POSITION, getGlowTexture } from '@/lib/world/materials'
-import { palette } from '@/lib/world/palette'
 import { rng } from '@/lib/world/geo'
+import { SUN_DIRECTION, SUN_POSITION, getGlowTexture } from '@/lib/world/materials'
 import { QUALITY, type Quality } from '@/lib/world/quality'
 import { useWorld } from '@/lib/world/store'
 
@@ -14,67 +14,47 @@ import { useWorld } from '@/lib/world/store'
 /* Sky + light                                                               */
 /* ------------------------------------------------------------------------ */
 
+/**
+ * Physically based daylight sky (Preetham: Rayleigh + Mie scattering) with the
+ * sun where the key light is. Procedural, so nothing is downloaded.
+ */
 export function Sky() {
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        uniforms: {
-          uTop: { value: new THREE.Color(palette.sky.top) },
-          uHorizon: { value: new THREE.Color(palette.sky.horizon) },
-          uBottom: { value: new THREE.Color(palette.sky.bottom) },
-        },
-        vertexShader: /* glsl */ `
-          varying vec3 vDir;
-          void main() {
-            vDir = normalize(position);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: /* glsl */ `
-          uniform vec3 uTop; uniform vec3 uHorizon; uniform vec3 uBottom;
-          varying vec3 vDir;
-          void main() {
-            float h = vDir.y;
-            vec3 col = mix(uHorizon, uTop, smoothstep(0.02, 0.6, h));
-            col = mix(col, uBottom, 1.0 - smoothstep(-0.3, 0.02, h));
-            gl_FragColor = vec4(col, 1.0);
-            #include <colorspace_fragment>
-          }
-        `,
-      }),
-    [],
-  )
-  return (
-    <mesh material={material} renderOrder={-1}>
-      <sphereGeometry args={[480, 32, 16]} />
-    </mesh>
-  )
+  const sky = useMemo(() => {
+    const s = new SkyImpl()
+    // Inside the camera's far plane, outside everything else.
+    s.scale.setScalar(1200)
+    const u = s.material.uniforms
+    u.turbidity.value = 2.6
+    u.rayleigh.value = 2.1
+    u.mieCoefficient.value = 0.003
+    u.mieDirectionalG.value = 0.8
+    u.sunPosition.value.copy(SUN_DIRECTION)
+    return s
+  }, [])
+  return <primitive object={sky} />
 }
 
 export function Lights({ quality }: { quality: Quality }) {
   const size = QUALITY[quality].shadowMap
   return (
     <>
-      <hemisphereLight args={['#FFF4E0', '#A7CFA0', 1.55]} />
-      <ambientLight intensity={0.25} color={palette.warmWhite} />
+      <hemisphereLight args={['#cfe0ef', '#5d5442', 1.25]} />
       {/* Keyed on quality: a shadow map is allocated once, so a new size needs a new light. */}
       <directionalLight
         key={quality}
         castShadow
         position={SUN_POSITION}
-        intensity={2.5}
-        color="#FFE3B8"
+        intensity={3.1}
+        color="#fff1dc"
         shadow-mapSize={[size, size]}
         shadow-bias={-0.0004}
         shadow-normalBias={0.04}
-        shadow-camera-left={-66}
-        shadow-camera-right={66}
-        shadow-camera-top={66}
-        shadow-camera-bottom={-66}
+        shadow-camera-left={-72}
+        shadow-camera-right={72}
+        shadow-camera-top={72}
+        shadow-camera-bottom={-72}
         shadow-camera-near={1}
-        shadow-camera-far={220}
+        shadow-camera-far={240}
       />
     </>
   )
@@ -84,111 +64,124 @@ export function Lights({ quality }: { quality: Quality }) {
 /* Clouds                                                                    */
 /* ------------------------------------------------------------------------ */
 
-interface Puff {
-  cloud: number
-  ox: number
-  oy: number
-  oz: number
-  s: number
+/**
+ * Soft cumulus built from camera-facing billboards in one instanced draw.
+ * Each billboard is shaded lighter on top, fades out near the camera (so the
+ * intro falls *through* the cloud bank) and takes the scene's haze.
+ */
+function createCloudMaterial(opacity: number) {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    fog: true,
+    uniforms: THREE.UniformsUtils.merge([
+      THREE.UniformsLib.fog,
+      { uOpacity: { value: opacity } },
+    ]),
+    vertexShader: /* glsl */ `
+      #include <common>
+      #include <fog_pars_vertex>
+      varying vec2 vUv;
+      varying float vDist;
+      varying float vSeed;
+      void main() {
+        #ifdef USE_INSTANCING
+          vec3 center = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+          float scale = length(instanceMatrix[0].xyz);
+        #else
+          vec3 center = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+          float scale = 1.0;
+        #endif
+        vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+        vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+        vec3 wp = center + (right * position.x + up * position.y * 0.62) * scale;
+        vUv = uv;
+        vSeed = fract(center.x * 0.137 + center.z * 0.291);
+        vec4 mvPosition = viewMatrix * vec4(wp, 1.0);
+        vDist = -mvPosition.z;
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      #include <common>
+      #include <fog_pars_fragment>
+      uniform float uOpacity;
+      varying vec2 vUv;
+      varying float vDist;
+      varying float vSeed;
+      void main() {
+        vec2 p = vUv - 0.5;
+        float d = length(p * vec2(1.0, 1.15)) * 2.0;
+        float body = 1.0 - smoothstep(0.35, 1.0, d);
+        float lit = mix(0.88, 1.04, smoothstep(0.15, 0.85, vUv.y));
+        vec3 col = vec3(lit) * mix(vec3(0.93, 0.95, 0.98), vec3(1.0, 0.98, 0.95), vSeed);
+        float alpha = body * uOpacity * smoothstep(6.0, 40.0, vDist);
+        gl_FragColor = vec4(col, alpha);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+        #include <fog_fragment>
+      }
+    `,
+  })
 }
 
-interface CloudDef {
+interface Puff {
   x: number
   y: number
   z: number
-  speed: number
-  scale: number
+  s: number
 }
 
-function buildClouds(
-  seed: number,
-  count: number,
-  area: number,
-  y: [number, number],
-  scale: [number, number],
-  minRadius: number,
-) {
+function buildCloudBank(seed: number, clouds: number, rMin: number, rMax: number, y: [number, number], size: [number, number]) {
   const r = rng(seed)
-  const clouds: CloudDef[] = []
   const puffs: Puff[] = []
-  for (let i = 0; i < count; i++) {
-    // Scatter in a ring so the middle of the map stays clear.
+  for (let c = 0; c < clouds; c++) {
     const a = r() * Math.PI * 2
-    const d = minRadius + r() * (area - minRadius)
-    const c: CloudDef = {
-      x: Math.cos(a) * d,
-      y: y[0] + r() * (y[1] - y[0]),
-      z: Math.sin(a) * d,
-      speed: 0.4 + r() * 0.6,
-      scale: scale[0] + r() * (scale[1] - scale[0]),
-    }
-    clouds.push(c)
-    const n = 4 + Math.floor(r() * 4)
+    const d = rMin + r() * (rMax - rMin)
+    const cx = Math.cos(a) * d
+    const cz = Math.sin(a) * d
+    const cy = y[0] + r() * (y[1] - y[0])
+    const s = size[0] + r() * (size[1] - size[0])
+    const n = 6 + Math.floor(r() * 6)
     for (let k = 0; k < n; k++) {
-      const t = n === 1 ? 0 : k / (n - 1) - 0.5
+      const t = k / (n - 1) - 0.5
       puffs.push({
-        cloud: i,
-        ox: t * 3.6 + (r() - 0.5) * 0.8,
-        oy: (r() - 0.3) * 0.7 + (1 - Math.abs(t) * 1.6) * 0.6,
-        oz: (r() - 0.5) * 1.6,
-        s: 0.9 + (1 - Math.abs(t)) * 0.9 + r() * 0.4,
+        x: cx + t * s * 2.4 + (r() - 0.5) * s * 0.6,
+        y: cy + (1 - Math.abs(t) * 1.6) * s * 0.35 + (r() - 0.5) * s * 0.2,
+        z: cz + (r() - 0.5) * s * 0.9,
+        s: s * (0.7 + (1 - Math.abs(t)) * 0.7 + r() * 0.3),
       })
     }
   }
-  return { clouds, puffs }
+  return puffs
 }
 
-/**
- * Low-poly puffs drifting east to west. All puffs of one layer share a single
- * instanced draw; positions update in place each frame without touching React.
- */
-function CloudLayer({
-  seed,
-  count,
-  area,
-  y,
-  scale,
-  wrap,
-  castShadow = false,
-  opacity = 1,
-  minRadius = 0,
+function CloudBank({
+  puffs,
+  opacity,
+  drift,
   visibleIn,
 }: {
-  seed: number
-  count: number
-  area: number
-  y: [number, number]
-  scale: [number, number]
-  wrap: number
-  castShadow?: boolean
-  opacity?: number
-  minRadius?: number
+  puffs: Puff[]
+  opacity: number
+  drift: number
   visibleIn?: (phase: string) => boolean
 }) {
-  const { clouds, puffs } = useMemo(
-    () => buildClouds(seed, count, area, y, scale, minRadius),
-    [seed, count, area, y, scale, minRadius],
-  )
-  const material = useMemo(() => createCloudMaterial(opacity), [opacity])
   const mesh = useRef<THREE.InstancedMesh>(null)
+  const material = useMemo(() => createCloudMaterial(opacity), [opacity])
+  const geometry = useMemo(() => new THREE.PlaneGeometry(1, 1), [])
   const dummy = useMemo(() => new THREE.Object3D(), [])
-  const offsets = useMemo(() => clouds.map(() => 0), [clouds])
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
     if (visibleIn) m.visible = visibleIn(useWorld.getState().phase)
     if (!m.visible) return
-    const dt = Math.min(delta, 0.1)
-    clouds.forEach((c, i) => {
-      offsets[i] -= c.speed * dt
-    })
+    const off = clock.elapsedTime * drift
     puffs.forEach((p, i) => {
-      const c = clouds[p.cloud]
-      let x = c.x + offsets[p.cloud]
-      x = ((((x + wrap) % (wrap * 2)) + wrap * 2) % (wrap * 2)) - wrap
-      dummy.position.set(x + p.ox * c.scale, c.y + p.oy * c.scale, c.z + p.oz * c.scale)
-      dummy.scale.setScalar(p.s * c.scale)
+      dummy.position.set(p.x + off, p.y, p.z)
+      dummy.scale.setScalar(p.s)
       dummy.updateMatrix()
       m.setMatrixAt(i, dummy.matrix)
     })
@@ -198,70 +191,26 @@ function CloudLayer({
   return (
     <instancedMesh
       ref={mesh}
-      args={[undefined, undefined, puffs.length]}
-      castShadow={castShadow}
+      args={[geometry, material, puffs.length]}
       frustumCulled={false}
-    >
-      <icosahedronGeometry args={[1, 1]} />
-      <primitive object={material} attach="material" />
-    </instancedMesh>
+      renderOrder={3}
+    />
   )
 }
 
-/**
- * Puffs dissolve as the camera gets close, so flying through a cloud reads as
- * mist rather than as a wall of giant polygons.
- */
-function createCloudMaterial(opacity: number) {
-  const m = new THREE.MeshLambertMaterial({
-    color: '#ffffff',
-    emissive: '#ffffff',
-    emissiveIntensity: 0.3,
-    flatShading: true,
-    transparent: true,
-    opacity,
-  })
-  m.onBeforeCompile = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <opaque_fragment>',
-      `diffuseColor.a *= smoothstep(6.0, 34.0, length(vViewPosition));
-      #include <opaque_fragment>`,
-    )
-  }
-  m.customProgramCacheKey = () => 'world-cloud'
-  return m
-}
-
-const AMBIENT_Y: [number, number] = [16, 26]
-const AMBIENT_SCALE: [number, number] = [0.9, 1.5]
-const HIGH_Y: [number, number] = [96, 132]
-const HIGH_SCALE: [number, number] = [5, 8]
 const showHigh = (phase: string) => phase === 'loading' || phase === 'intro'
 
 export function Clouds({ quality }: { quality: Quality }) {
+  const ambient = useMemo(
+    () => buildCloudBank(5, quality === 'high' ? 16 : 9, 90, 380, [42, 70], [9, 16]),
+    [quality],
+  )
+  // The bank the intro camera falls through; hidden once it's below.
+  const high = useMemo(() => buildCloudBank(9, 22, 0, 150, [96, 136], [14, 24]), [])
   return (
     <>
-      <CloudLayer
-        seed={5}
-        count={11}
-        area={72}
-        minRadius={50}
-        y={AMBIENT_Y}
-        scale={AMBIENT_SCALE}
-        wrap={78}
-        castShadow={QUALITY[quality].cloudShadows}
-      />
-      {/* The bank the intro camera falls through. Hidden once it's below. */}
-      <CloudLayer
-        seed={9}
-        count={22}
-        area={95}
-        y={HIGH_Y}
-        scale={HIGH_SCALE}
-        wrap={130}
-        opacity={0.9}
-        visibleIn={showHigh}
-      />
+      <CloudBank puffs={ambient} opacity={0.8} drift={-0.6} />
+      <CloudBank puffs={high} opacity={0.75} drift={-1.2} visibleIn={showHigh} />
     </>
   )
 }

@@ -25,6 +25,11 @@ export function EastBank() {
   return <Buildings items={layout.eastBuildings} />
 }
 
+/** Suburbs and villages out toward the horizon. */
+export function Outskirts() {
+  return <Buildings items={layout.outskirtBuildings} />
+}
+
 export function Greenery() {
   return <Trees items={layout.trees} />
 }

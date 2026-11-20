@@ -8,7 +8,7 @@
 | -------- | ------------------------------------------------------------------ |
 | Owner    | Quach Hoang Anh (Hayes), Senior Software Engineer, Da Nang         |
 | Domain   | `hayes.io.vn`                                                      |
-| Product  | One page: "Da Nang DevQuest", an interactive 3D miniature of the city |
+| Product  | One page: an interactive 3D Da Nang, procedural city-builder realism |
 | Locales  | `en` at `/`, `ja` at `/ja`                                         |
 | Hosting  | Vercel (Node 26)                                                   |
 
@@ -60,7 +60,7 @@ Each portfolio section is a landmark in the world:
 
 ### 3.4 Rendering & quality tiers
 
-- `lib/world/quality.ts`: `high` (desktop) adds `scene/post-fx.tsx` — N8AO, bloom, tilt-shift, neutral tone mapping, vignette, SMAA — loaded lazily after the scene is live. `low` (phones, ≤4 cores/GB) skips it and uses a 1024 shadow map. `PerformanceMonitor` downgrades on sustained low FPS. `?quality=high|low` pins a tier.
+- `lib/world/quality.ts`: `high` (desktop) adds `scene/post-fx.tsx` — N8AO, bloom, ACES tone mapping, vignette, SMAA — loaded lazily after the scene is live. `low` (phones, ≤4 cores/GB) skips it and uses a 1024 shadow map. `PerformanceMonitor` downgrades on sustained low FPS. `?quality=high|low` pins a tier.
 - Light emitters use `glowColor()` (HDR > 1.0) so bloom selects them; bloom threshold 1.5.
 - Metals take their reflections from `scene/environment.tsx` (`studioEnvironment`), never from `scene.environment`.
 

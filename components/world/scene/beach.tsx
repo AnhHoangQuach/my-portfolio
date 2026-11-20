@@ -270,6 +270,7 @@ const BEACH_HUTS: Building[] = (() => {
       wall: palette.wood,
       roof: '#E8C98F',
       roofKind: 'hip' as const,
+      kind: 'house' as const,
       city: false,
     }))
 })()

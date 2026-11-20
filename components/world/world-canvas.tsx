@@ -16,7 +16,7 @@ import { LandmarkLabelsProvider, type LandmarkLabel } from './landmark'
 import { Clouds, Lights, Sky } from './scene/atmosphere'
 import { MyKheBeach } from './scene/beach'
 import { HanRiverBridge, LoveBridge, TranThiLyBridge } from './scene/bridges'
-import { CityCenter, EastBank, Greenery } from './scene/city'
+import { CityCenter, EastBank, Greenery, Outskirts } from './scene/city'
 import { DragonBridge } from './scene/dragon-bridge'
 import { DragonFire } from './scene/dragon-fire'
 import { MarbleMountains, SonTra } from './scene/mountains'
@@ -109,14 +109,17 @@ export default function WorldCanvas({ labels }: { labels: Record<LandmarkId, Lan
       gl={{
         antialias: true,
         powerPreference: 'high-performance',
-        toneMapping: THREE.NeutralToneMapping,
-        toneMappingExposure: 1.02,
+        // Filmic response for the realistic look; the high tier applies the
+        // same curve in its post-processing chain.
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 0.95,
       }}
-      camera={{ fov: 30, near: 0.5, far: 1400, position: [start[0], start[1], start[2]] }}
+      camera={{ fov: 40, near: 0.5, far: 2000, position: [start[0], start[1], start[2]] }}
       onCreated={() => useWorld.getState().setLoadStage(1)}
     >
       <color attach="background" args={[palette.sky.horizon]} />
-      <fog attach="fog" args={[palette.fog, 190, 460]} />
+      {/* Exponential haze toward the horizon; distant hills fade into the sky. */}
+      <fogExp2 attach="fog" args={[palette.fog, 0.0022]} />
       {/* Sustained low frame rate drops to the light tier, and stays there:
           flip-flopping would rebuild the shadow map over and over. */}
       <PerformanceMonitor
@@ -140,6 +143,7 @@ export default function WorldCanvas({ labels }: { labels: Record<LandmarkId, Lan
           <Roads />
           <Greenery />
           <EastBank />
+          <Outskirts />
 
           <DragonBridge />
           <DragonFire />

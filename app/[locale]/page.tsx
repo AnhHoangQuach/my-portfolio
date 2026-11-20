@@ -49,8 +49,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const hero = await getTranslations({ locale, namespace: 'hero' })
 
   const strings: WorldStrings = {
-    brand: t('brand'),
-    tagline: t('tagline'),
+    kicker: t('kicker'),
     identity: {
       name: profile.name,
       initials: t('initials'),

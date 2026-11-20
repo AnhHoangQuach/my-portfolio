@@ -2,13 +2,14 @@
 
 /*
  * The site is a single page — the 3D world — whose UI tokens live in
- * `components/world/world.css`. This file only wires up the type scale.
+ * `components/world/world.css`. This file only wires up the fonts.
  */
 @theme inline {
+  /* Be Vietnam Pro first; Japanese falls through to the platform's CJK fonts. */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'Hiragino Sans',
-    'Noto Sans JP', 'Noto Sans', sans-serif;
-  --font-heading: var(--font-display), var(--font-sans);
+    var(--font-be-vietnam), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  --font-heading: var(--font-sans);
   --font-mono:
     ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }
