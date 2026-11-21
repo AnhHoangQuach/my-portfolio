@@ -122,8 +122,13 @@ export default function WorldCanvas({ labels }: { labels: Record<LandmarkId, Lan
       {/* Exponential haze toward the horizon; distant hills fade into the sky. */}
       <fogExp2 attach="fog" args={[palette.fog, 0.0022]} />
       {/* Sustained low frame rate drops to the light tier, and stays there:
-          flip-flopping would rebuild the shadow map over and over. */}
+          flip-flopping would rebuild the shadow map over and over. The pixel
+          ratio settles too: zooming out over the lit city at night is when
+          frame cost swings most, and every dpr change resizes the canvas and
+          the post-processing targets, re-drawing the whole frame. */}
       <PerformanceMonitor
+        flipflops={3}
+        onFallback={() => setDpr(1)}
         onDecline={() => {
           if (pinned) return
           setQuality('low')

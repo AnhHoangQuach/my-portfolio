@@ -210,11 +210,20 @@ export function createBuildingMaterial() {
         float level = floor(vWPos.y / floorH);
         float fx = fract(u * 2.6 + seed * 7.0);
 
+        // Zoomed out, a window cell shrinks below a couple of pixels and the
+        // hard-edged pattern aliases into moiré that crawls with every zoom
+        // step — at night, HDR windows through bloom, so the city's lights
+        // seem to flicker and re-draw. Fade to the pattern's average
+        // coverage as the cells get that small (cells per pixel, via fwidth).
+        float cellsPerPx = max(fwidth(u) * 3.4, fwidth(vWPos.y) / floorH);
+        float farFade = smoothstep(0.3, 0.7, cellsPerPx);
+
         float punched = step(0.2, fx) * step(fx, 0.8) * step(0.3, fy) * step(fy, 0.8);
         float shop = step(0.08, fx) * step(fx, 0.92) * step(0.05, fy) * step(fy, 0.86);
         punched = mix(punched, shop, step(level, 0.5));
         float curtain = step(0.07, fract(u * 3.4)) * step(0.14, fy);
-        float glass = mix(punched, curtain, tower) * side * step(0.02, vWPos.y);
+        float pattern = mix(mix(punched, curtain, tower), mix(0.3, 0.8, tower), farFade);
+        float glass = pattern * side * step(0.02, vWPos.y);
 
         float band = (1.0 - step(0.1, fy)) * side * (1.0 - tower);
         vec3 glassTint = mix(vec3(0.035, 0.06, 0.08), vec3(0.06, 0.10, 0.12), seed);
@@ -226,8 +235,9 @@ export function createBuildingMaterial() {
         // By day a few rooms are lit; after dusk about half the city is home,
         // towers included. HDR (> 1.5) at night so bloom picks the windows out.
         float roomSeed = wHash(vec2(level, floor(u * 2.6)) + vInst.xz);
-        float lit = step(mix(0.86, 0.5, uNight), roomSeed);
-        float warmth = mix(0.85, 1.15, wHash(vec2(roomSeed, level)));
+        float litThreshold = mix(0.86, 0.5, uNight);
+        float lit = mix(step(litThreshold, roomSeed), 1.0 - litThreshold, farFade);
+        float warmth = mix(mix(0.85, 1.15, wHash(vec2(roomSeed, level))), 1.0, farFade);
         float strength = mix(0.06 * (1.0 - tower), 2.3 * warmth, uNight);
         totalEmissiveRadiance += uWindow * glass * lit * strength;`,
       )

@@ -87,8 +87,10 @@ function streetLights() {
         if (Math.hypot(x, z) > 140) continue
         posts.push([x - (dz / len) * off * side, 0, z + (dx / len) * off * side])
         // The pool falls just inside the kerb, on the carriageway.
+        // Just above the block plinths (top 0.06) the disc spills onto, so it
+        // never sits *under* a surface; the material's depth bias does the rest.
         const pool = off - 0.55
-        pools.push([x - (dz / len) * pool * side, 0.045, z + (dx / len) * pool * side])
+        pools.push([x - (dz / len) * pool * side, 0.065, z + (dx / len) * pool * side])
       }
     })
   }
@@ -122,8 +124,15 @@ function createLightPoolMaterial() {
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
+    // The discs lie a hair above the road, the sidewalk and the plinths. A
+    // slope-only bias (factor) vanishes when looking straight down, and the
+    // depth buffer's world-space precision coarsens with distance squared,
+    // so zooming out made the pools z-fight and blink on and off. `units`
+    // biases by a fixed number of depth steps, which stays correct at any
+    // camera distance.
     polygonOffset: true,
-    polygonOffsetFactor: -4,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -8,
     uniforms: { uNight: daylight.night, uColor: { value: new THREE.Color('#ffb860') } },
     vertexShader: /* glsl */ `
       varying vec2 vUv;

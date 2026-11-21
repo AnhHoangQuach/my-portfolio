@@ -113,6 +113,12 @@ function trafficLines(): { line: XZ[]; width: number }[] {
 }
 
 /**
+ * Scales every road vehicle's speed (world units per second). At 1 the
+ * traffic ran at an apparent ~60 km/h through town; 0.5 is a calmer city pace.
+ */
+const TRAFFIC_SPEED = 0.5
+
+/**
  * City traffic, Da Nang style: mostly motorbikes, plus cars, on every road
  * and across the bridges, in both directions. Two instanced meshes per
  * vehicle type; positions advance along precomputed lane polylines.
@@ -222,7 +228,7 @@ export function Cars() {
     ) => {
       st.list.forEach((v, i) => {
         const L = v.lane
-        const s = (st.s[i] + v.speed * dt) % L.length
+        const s = (st.s[i] + v.speed * TRAFFIC_SPEED * dt) % L.length
         st.s[i] = s
         let seg = st.seg[i]
         if (s < L.cum[seg]) seg = 0
