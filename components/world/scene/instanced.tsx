@@ -7,6 +7,9 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Building, TreeInstance } from '@/lib/world/layout'
 import { createBuildingMaterial, createSwayMaterial, withSurfaceDetail } from '@/lib/world/materials'
 import { palette } from '@/lib/world/palette'
+import { useWorld } from '@/lib/world/store'
+import { KitBuildings } from './kit-buildings'
+import { usePack } from './models'
 
 /* ------------------------------------------------------------------------ */
 /* Shared geometry                                                           */
@@ -76,8 +79,18 @@ function useInstances(
   }, [ref, count, fill])
 }
 
-/** Walls, roofs and rooftop clutter for a list of buildings: four draw calls total. */
+/**
+ * A list of buildings: glTF kit models on the high tier (see
+ * `kit-buildings.tsx`), procedural shader-drawn blocks on the low tier.
+ */
 export function Buildings({ items }: { items: Building[] }) {
+  const high = useWorld((s) => s.quality === 'high')
+  const pack = usePack('buildings', high)
+  return pack ? <KitBuildings items={items} pack={pack} /> : <ProceduralBuildings items={items} />
+}
+
+/** Walls, roofs and rooftop clutter for a list of buildings: four draw calls total. */
+function ProceduralBuildings({ items }: { items: Building[] }) {
   const wallMaterial = useMemo(() => withSurfaceDetail(createBuildingMaterial(), 'plaster'), [])
   const roofMaterial = useMemo(
     () =>

@@ -9,22 +9,26 @@ import {
   type LandmarkId,
   type SectionId,
 } from '@/lib/world/landmarks'
-import { DAY_HOUR, NIGHT_HOUR, parseTimeParam } from '@/lib/world/daylight'
+import { DAY_HOUR, NIGHT_HOUR, TIME_MODE_KEY, parseTimeParam } from '@/lib/world/clock'
 import { useWorld } from '@/lib/world/store'
-import { TIME_MODE_KEY } from './ui/hud'
 import { useReducedMotion } from '@/components/use-reduced-motion'
-import { Hud } from './ui/hud'
-import { InfoPanel } from './ui/info-panel'
 import { IntroOverlay, LoadingScreen } from './ui/overlays'
 import type { WorldStrings } from './strings'
 import './world.css'
 
-// three.js and the whole scene are a separate chunk. Start fetching it the
-// moment this module evaluates — before hydration finishes — instead of
-// waiting for React to render the dynamic component. Same promise either way.
-const loadCanvas = () => import('./world-canvas')
-if (typeof window !== 'undefined') void loadCanvas()
-const WorldCanvas = dynamic(loadCanvas, { ssr: false })
+// three.js and the whole scene are a separate chunk, fetched and run only
+// once the visitor interacts (see `START_EVENTS`): the first view is the
+// server-rendered welcome screen, so the page is fast and quiet until someone
+// actually wants the 3D world — and crawlers never pay for it.
+const WorldCanvas = dynamic(() => import('./world-canvas'), { ssr: false })
+// The HUD, the section panels and the fire-show clock only matter once the
+// world is up, so they load with it rather than with the welcome screen.
+const Hud = dynamic(() => import('./ui/hud').then((m) => m.Hud), { ssr: false })
+const InfoPanel = dynamic(() => import('./ui/info-panel').then((m) => m.InfoPanel), { ssr: false })
+const FireShowTicker = dynamic(() => import('./ui/fire-show').then((m) => m.FireShowTicker), { ssr: false })
+
+/** Any of these, once, starts the world (as does the welcome screen's button). */
+const START_EVENTS = ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'] as const
 
 let webglSupport: boolean | undefined
 
@@ -87,6 +91,16 @@ export function WorldExperience({
   const reduced = useReducedMotion()
   const webgl = useSyncExternalStore<boolean | null>(noSubscribe, hasWebGL, () => null)
   const night = useWorld((s) => s.nightUi)
+  const started = useWorld((s) => s.started)
+
+  useEffect(() => {
+    if (started) return
+    const start = () => useWorld.getState().start()
+    for (const e of START_EVENTS) window.addEventListener(e, start, { once: true, passive: true })
+    return () => {
+      for (const e of START_EVENTS) window.removeEventListener(e, start)
+    }
+  }, [started])
 
   useEffect(() => {
     useWorld.getState().setReducedMotion(reduced)
@@ -117,13 +131,15 @@ export function WorldExperience({
     const onKey = (e: KeyboardEvent) => {
       const s = useWorld.getState()
       if (e.key === 'Escape') {
-        if (s.activeId) s.back()
+        if (s.ride === 'on') s.stopRide()
+        else if (s.activeId) s.back()
         else if (s.phase === 'intro' || s.phase === 'welcome') s.skipIntro()
         return
       }
       // ← / → travel the journey in order. Left alone while typing or with modifiers.
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-      if (s.phase !== 'explore' || e.altKey || e.ctrlKey || e.metaKey) return
+      // While riding, the arrow keys steer (see ui/ride-hud.tsx).
+      if (s.phase !== 'explore' || s.ride === 'on' || e.altKey || e.ctrlKey || e.metaKey) return
       const el = e.target as HTMLElement | null
       if (el?.closest('input, textarea, select, [contenteditable="true"]')) return
       const step = e.key === 'ArrowRight' ? 1 : -1
@@ -149,7 +165,7 @@ export function WorldExperience({
     <div className="world-root fixed inset-0 overflow-hidden" data-night={night || undefined}>
       {webgl === false ? (
         fallback
-      ) : webgl ? (
+      ) : webgl && started ? (
         <CanvasBoundary fallback={fallback}>
           <WorldCanvas labels={labels} />
         </CanvasBoundary>
@@ -157,8 +173,13 @@ export function WorldExperience({
 
       {webgl !== false && (
         <>
-          <Hud strings={strings} locale={locale} />
-          <InfoPanel strings={strings} panels={panels} />
+          {started && (
+            <>
+              <FireShowTicker />
+              <Hud strings={strings} locale={locale} />
+              <InfoPanel strings={strings} panels={panels} />
+            </>
+          )}
           <IntroOverlay strings={strings} />
           <LoadingScreen strings={strings} />
         </>

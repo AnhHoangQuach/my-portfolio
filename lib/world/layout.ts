@@ -128,6 +128,27 @@ function nearRoad(x: number, z: number, pad: number) {
   return false
 }
 
+/** Sidewalks run 0.35 either side of every road (see `Roads` in scene/roads.tsx). */
+const SIDEWALK = 0.35
+
+/**
+ * The whole footprint stays off the road and its sidewalk — corners, edge
+ * midpoints and centre, not just the centre, since a deep house's front can
+ * reach a road its centre is well clear of.
+ */
+function footprintClear(b: Pick<Building, 'x' | 'z' | 'w' | 'd' | 'rot'>, pad = SIDEWALK) {
+  const c = Math.cos(b.rot)
+  const s = Math.sin(b.rot)
+  for (const u of [-0.5, 0, 0.5]) {
+    for (const v of [-0.5, 0, 0.5]) {
+      const lx = u * b.w
+      const lz = v * b.d
+      if (nearRoad(b.x + lx * c + lz * s, b.z - lx * s + lz * c, pad)) return false
+    }
+  }
+  return true
+}
+
 /* ------------------------------------------------------------------------ */
 /* Reserved areas                                                            */
 /* ------------------------------------------------------------------------ */
@@ -343,7 +364,7 @@ function generateEastBuildings(): Building[] {
       coastalRoad[0],
     )[0]
     const x = roadX - 1.9
-    if (!isLand(x, z, 1) || inReserved(x, z, 0.6) || nearRoad(x, z, 0.5)) continue
+    if (!isLand(x, z, 1) || inReserved(x, z, 0.6) || !footprintClear({ x, z, w: 1.6, d: 1.8, rot: 0 })) continue
     out.push({
       x, z, w: 1.6, d: 1.8, h: 3.5 + r() * 6.5, rot: 0,
       wall: pick(r, palette.walls), roof: palette.roofs[0], roofKind: 'flat', kind: 'tower', city: false,
@@ -358,7 +379,8 @@ function generateEastBuildings(): Building[] {
     const clear = roadClearance(x, z)
     if (clear < 0.35 || clear > 3.2) continue
     if (out.some((o) => Math.abs(o.x - x) < 0.75 && Math.abs(o.z - z) < 0.75)) continue
-    out.push(tubeHouse(r, x, z, false))
+    const house = tubeHouse(r, x, z, false)
+    if (footprintClear(house)) out.push(house)
   }
   return out
 }
@@ -385,7 +407,7 @@ function tubeHouse(r: () => number, x: number, z: number, city: boolean): Buildi
  * Suburbs and villages: houses strung along the roads out of the city,
  * thinning with distance, never on hills, in rivers or on the beach.
  */
-function generateOutskirts(existing: Building[]): Building[] {
+function generateOutskirts(): Building[] {
   const r = rng(29)
   const out: Building[] = []
   const lines = [...OUTSKIRT_ROADS, straight([-175, 0], [-52, 0])]
@@ -408,7 +430,8 @@ function generateOutskirts(existing: Building[]): Building[] {
         if (!isLand(x, z, 1) || farTerrainHeight(x, z) > 0.25) continue
         if (riverBankDistance(x, z) < 2.5 || southRiverDistance(x, z) < 2.5) continue
         if (inBeach(x, z) || inReserved(x, z, 1)) continue
-        out.push(tubeHouse(r, x, z, false))
+        const house = tubeHouse(r, x, z, false)
+        if (footprintClear(house)) out.push(house)
       }
     })
   }
@@ -424,10 +447,10 @@ function generateOutskirts(existing: Building[]): Building[] {
       if (!isLand(x, z, 1.5) || farTerrainHeight(x, z) > 0.25) continue
       if (riverBankDistance(x, z) < 2.5 || southRiverDistance(x, z) < 2.5 || inBeach(x, z)) continue
       if (Math.hypot(x, z) < 55 && x > -52) continue
-      out.push(tubeHouse(r, x, z, false))
+      const house = tubeHouse(r, x, z, false)
+      if (footprintClear(house)) out.push(house)
     }
   }
-  void existing
   return out
 }
 
@@ -607,9 +630,11 @@ function generateUmbrellas(): Umbrella[] {
 /* ------------------------------------------------------------------------ */
 
 const { blocks, parks } = cityBlocks()
-const cityBuildings = generateBuildings(blocks)
+// Blocks already stop at the sidewalk; this only drops the odd house whose
+// front pokes past a curving riverfront road.
+const cityBuildings = generateBuildings(blocks).filter((b) => footprintClear(b, 0))
 const eastBuildings = generateEastBuildings()
-const outskirtBuildings = generateOutskirts([...cityBuildings, ...eastBuildings])
+const outskirtBuildings = generateOutskirts()
 const allBuildings = [...cityBuildings, ...eastBuildings, ...outskirtBuildings]
 
 export const layout = {

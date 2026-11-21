@@ -40,7 +40,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ### 4. The 3D world
 
-- Only `components/world/camera-rig.tsx` moves the camera; everything else bumps `command` in `lib/world/store.ts`. Never disable camera input during a flight — the visitor must always be able to take over.
+- Only `components/world/camera-rig.tsx` moves the camera; everything else bumps `command` in `lib/world/store.ts`. Never disable camera input during a flight — the visitor must always be able to take over. (Ride mode is the one exception: orbit input is off while the chase camera follows the car, and Esc or "Get out" always hands it back.)
 - Mutate three.js objects inside `useFrame` through refs (mesh refs, or lazily created refs) — never through `useMemo`/state values. The React Compiler lint rejects the latter.
 - GLSL: `smoothstep` edges must ascend, and no shader may divide by something that can reach 0. Post-processing runs in half-float buffers, where one `Inf` pixel blanks the frame.
 - Never set `scene.environment` on the main scene (it lights Lambert materials too).

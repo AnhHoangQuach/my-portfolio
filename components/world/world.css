@@ -206,10 +206,88 @@
     }
   }
 
+  /* Mini-map: drawn from the scene's geography, themed with the HUD. */
+  .world-root {
+    --w-map-water: #8fd0d6;
+    --w-map-land: #efe3c8;
+    --w-map-road: #fffaf0;
+    --w-map-hill: #9cc49a;
+    --w-map-rock: #c9c1b4;
+  }
+  .world-root[data-night] {
+    --w-map-water: #12263a;
+    --w-map-land: #283044;
+    --w-map-road: #e8b86a;
+    --w-map-hill: #2f4a3e;
+    --w-map-rock: #4a4d58;
+  }
+  .world-map-water {
+    fill: var(--w-map-water);
+  }
+  .world-map-land {
+    fill: var(--w-map-land);
+  }
+  .world-map-hill {
+    fill: var(--w-map-hill);
+  }
+  .world-map-rock {
+    fill: var(--w-map-rock);
+  }
+  .world-map-road {
+    fill: none;
+    stroke: var(--w-map-road);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.9;
+  }
+  .world-map-cone {
+    fill: var(--w-gold);
+    opacity: 0.35;
+  }
+  .world-map-you,
+  .world-map-car {
+    fill: var(--w-gold);
+    stroke: var(--w-ink);
+    stroke-width: 0.6;
+  }
+
+  /* Key cap, e.g. the "E" on the ride prompt. */
+  .world-kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    padding: 0 0.35rem;
+    border-radius: 0.4rem;
+    border: 1.5px solid color-mix(in oklab, var(--w-wood) 55%, transparent);
+    border-bottom-width: 3px;
+    font: 700 0.75rem/1 ui-monospace, monospace;
+    color: var(--w-ink-soft);
+  }
+
+  /* Pulsing "live" dot on the fire-show chip. */
+  .world-live-dot {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: #e5484d;
+    box-shadow: 0 0 0 2px var(--w-paper);
+    animation: world-live 1.6s ease-in-out infinite;
+  }
+  @keyframes world-live {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .world-marker,
     .world-cloud,
-    .world-rise {
+    .world-rise,
+    .world-live-dot {
       animation: none;
     }
   }

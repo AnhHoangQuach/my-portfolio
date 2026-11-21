@@ -8,9 +8,10 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { daylight } from '@/lib/world/daylight'
 import { WORLD, riverSamples, rng, type XZ } from '@/lib/world/geo'
 import { BRIDGES, riverRoadX, roads } from '@/lib/world/layout'
-import { palette } from '@/lib/world/palette'
+import { CAR_MIX, CAR_MODELS, type CarModel } from '@/lib/world/vehicle-kinds'
 import { DECK_TOP } from './bridges'
 import { DRAGON_DECK_TOP } from './dragon-bridge'
+import { usePack } from './models'
 
 /* ------------------------------------------------------------------------ */
 /* Paths                                                                     */
@@ -29,7 +30,7 @@ function offsetLine(line: XZ[], d: number): XZ[] {
 }
 
 /** Road surface height: deck tops on the bridges, the street everywhere else. */
-function roadY(x: number, z: number) {
+export function roadY(x: number, z: number) {
   const onSpan = (bz: number, top: number) =>
     Math.abs(z - bz) < 1.4 && x > riverRoadX('west', bz) - 0.2 && x < riverRoadX('east', bz) + 0.2
       ? top
@@ -56,7 +57,6 @@ function outAndBack(line: XZ[], lane: number) {
   return loop([...offsetLine(line, lane), ...offsetLine([...line].reverse(), lane)])
 }
 
-/** Riverfront circuit: north on the west bank, over the Han River Bridge, south, back over Tran Thi Ly. */
 /* ------------------------------------------------------------------------ */
 /* Traffic                                                                   */
 /* ------------------------------------------------------------------------ */
@@ -84,9 +84,8 @@ interface Vehicle {
   /** Starting distance along the lane. */
   start: number
   speed: number
-  bike: boolean
-  color: string
-  rider: string
+  /** Which glTF model draws it (`public/models/vehicles.glb`). */
+  model: CarModel
 }
 
 /** Small light blocks, each [x, y, z, colour, HDR strength], merged with vertex colours. */
@@ -118,169 +117,171 @@ function trafficLines(): { line: XZ[]; width: number }[] {
  */
 const TRAFFIC_SPEED = 0.5
 
+/** One car per this many units of lane in town (thinner in the countryside). */
+const CAR_SPACING = 6
+
+/** Full-detail models within this distance of the camera; `_lod1` beyond. */
+const LOD_DISTANCE = 40
+
+const zeroCounts = () => Object.fromEntries(CAR_MODELS.map((m) => [m, 0])) as Record<CarModel, number>
+
 /**
- * City traffic, Da Nang style: mostly motorbikes, plus cars, on every road
- * and across the bridges, in both directions. Two instanced meshes per
- * vehicle type; positions advance along precomputed lane polylines.
+ * City traffic: cars, taxis, vans and pickups on every road and across the
+ * bridges, in both directions. Every vehicle is a glTF model
+ * from `vehicles.glb` — full detail near the camera, the simplified `_lod1`
+ * beyond — drawn as two instanced meshes per model, compacted every frame.
+ * Nothing is drawn until the pack has loaded (the loading screen waits for
+ * it). Positions advance along precomputed lane polylines.
  */
 export function Cars() {
+  const pack = usePack('vehicles')
+
   const vehicles = useMemo<Vehicle[]>(() => {
     const r = rng(42)
+    // A separate stream picks car models, so changing the mix doesn't move the traffic.
+    const pick = rng(4242)
+    const mixTotal = CAR_MODELS.reduce((n, m) => n + CAR_MIX[m], 0)
+    const carModel = (): CarModel => {
+      let x = pick() * mixTotal
+      for (const m of CAR_MODELS) if ((x -= CAR_MIX[m]) < 0) return m
+      return 'sedan'
+    }
     const out: Vehicle[] = []
     for (const { line, width } of trafficLines()) {
-      const carLane = makeLane(line, width * 0.22)
-      const bikeLane = makeLane(line, width * 0.36)
+      const lane = makeLane(line, width * 0.22)
       const mid = line[Math.floor(line.length / 2)]
       // Dense in town, thinning out into the countryside.
       const density = Math.max(0.12, 1 - Math.hypot(mid[0], mid[1]) / 160)
-      const cars = Math.round((carLane.length / 9) * density)
-      const bikes = Math.round((bikeLane.length / 3.2) * density)
-      for (let i = 0; i < cars; i++) {
-        out.push({
-          lane: carLane, start: r() * carLane.length, speed: 2 + r() * 1.2, bike: false,
-          color: palette.cars[Math.floor(r() * palette.cars.length)], rider: '#1d1f22',
-        })
-      }
-      for (let i = 0; i < bikes; i++) {
-        out.push({
-          lane: bikeLane, start: r() * bikeLane.length, speed: 1.5 + r() * 1.1, bike: true,
-          color: palette.bikes[Math.floor(r() * palette.bikes.length)],
-          rider: ['#e8e2d0', '#3b5f8a', '#c8423a', '#2b2b2b', '#e1b94a', '#6f8f5a'][Math.floor(r() * 6)],
-        })
+      const count = Math.round((lane.length / CAR_SPACING) * density)
+      // One speed per lane and evenly spread (with a little jitter): cars
+      // never catch up with, or drive through, the one ahead.
+      const speed = 2 + r() * 1.2
+      const offset = r()
+      for (let i = 0; i < count; i++) {
+        const start = ((i + offset + (r() - 0.5) * 0.4) / count) * lane.length
+        out.push({ lane, start: (start + lane.length) % lane.length, speed, model: carModel() })
       }
     }
     return out
   }, [])
 
-  const cars = useMemo(() => vehicles.filter((v) => !v.bike), [vehicles])
-  const bikes = useMemo(() => vehicles.filter((v) => v.bike), [vehicles])
+  /** Instance capacity per model (each LOD can hold all of them). */
+  const capacity = useMemo(() => {
+    const n = zeroCounts()
+    for (const v of vehicles) n[v.model]++
+    return n
+  }, [vehicles])
 
-  const carBody = useRef<THREE.InstancedMesh>(null)
-  const carCabin = useRef<THREE.InstancedMesh>(null)
-  const bikeBody = useRef<THREE.InstancedMesh>(null)
-  const bikeRider = useRef<THREE.InstancedMesh>(null)
-  const geo = useMemo(
-    () => ({
-      carBody: new THREE.BoxGeometry(0.5, 0.15, 0.25).translate(0, 0.11, 0),
-      carCabin: new THREE.BoxGeometry(0.28, 0.12, 0.21).translate(-0.03, 0.24, 0),
-      bikeBody: new THREE.BoxGeometry(0.2, 0.07, 0.055).translate(0, 0.07, 0),
-      bikeRider: new THREE.BoxGeometry(0.07, 0.15, 0.07).translate(-0.02, 0.17, 0),
-      // Two headlights and two tail lights, coloured per vertex (HDR).
-      carLights: lightsGeometry([
-        [0.255, 0.12, 0.08, '#fff2d6', 3],
-        [0.255, 0.12, -0.08, '#fff2d6', 3],
-        [-0.255, 0.13, 0.08, '#ff2a1a', 2.2],
-        [-0.255, 0.13, -0.08, '#ff2a1a', 2.2],
+  const carLights = useRef<THREE.InstancedMesh>(null)
+  /** Detailed meshes by model name; `<name>_lod1` for the far ones. */
+  const meshes = useRef<Record<string, THREE.InstancedMesh | null>>({})
+
+  // Two headlights and two tail lights, coloured per vertex (HDR).
+  const lightsGeo = useMemo(
+    () =>
+      lightsGeometry([
+        [0.255, 0.1, 0.08, '#fff2d6', 3],
+        [0.255, 0.1, -0.08, '#fff2d6', 3],
+        [-0.255, 0.11, 0.08, '#ff2a1a', 2.2],
+        [-0.255, 0.11, -0.08, '#ff2a1a', 2.2],
       ]),
-      bikeLights: lightsGeometry([
-        [0.105, 0.1, 0, '#fff2d6', 3],
-        [-0.105, 0.1, 0, '#ff2a1a', 2],
-      ]),
-    }),
     [],
   )
-  const carLights = useRef<THREE.InstancedMesh>(null)
-  const bikeLights = useRef<THREE.InstancedMesh>(null)
-  /**
-   * Per-frame state lives here, created on the first frame: distance along
-   * the lane and a segment-index cache (progress is monotonic, so lookups
-   * stay O(1)). The vehicle descriptors themselves are never mutated.
-   */
+
+  /** Created on the first frame; the vehicle descriptors are never mutated. */
   const sim = useRef<{
     d: THREE.Object3D
-    colored: boolean
-    cars: { list: Vehicle[]; s: Float32Array; seg: Int32Array }
-    bikes: { list: Vehicle[]; s: Float32Array; seg: Int32Array }
+    /** Distance along each car's lane. */
+    s: Float32Array
+    /** Segment-index cache: progress is monotonic, so lookups stay O(1). */
+    seg: Int32Array
+    /** Instances written to each model's near / far mesh this frame. */
+    near: Record<CarModel, number>
+    far: Record<CarModel, number>
   } | null>(null)
 
-  useFrame((_, delta) => {
-    const meshes = [
-      carBody.current,
-      carCabin.current,
-      bikeBody.current,
-      bikeRider.current,
-      carLights.current,
-      bikeLights.current,
-    ]
-    if (meshes.some((m) => !m)) return
-    const [cb, cc, bb, br, cl, bl] = meshes as THREE.InstancedMesh[]
+  useFrame(({ camera }, delta) => {
+    const lamps = carLights.current
+    if (!pack || !lamps) return
     // Lights fade in after dusk and are skipped entirely by day.
     const night = daylight.night.value
     const lightsOn = night > 0.04
-    for (const m of [cl, bl]) {
-      m.visible = lightsOn
-      ;(m.material as THREE.MeshBasicMaterial).color.setScalar(night)
+    lamps.visible = lightsOn
+    ;(lamps.material as THREE.MeshBasicMaterial).color.setScalar(night)
+
+    sim.current ??= {
+      d: new THREE.Object3D(),
+      s: Float32Array.from(vehicles, (v) => v.start),
+      seg: new Int32Array(vehicles.length),
+      near: zeroCounts(),
+      far: zeroCounts(),
     }
-    const init = (list: Vehicle[]) => ({
-      list,
-      s: Float32Array.from(list, (v) => v.start),
-      seg: new Int32Array(list.length),
-    })
-    sim.current ??= { d: new THREE.Object3D(), colored: false, cars: init(cars), bikes: init(bikes) }
-    const state = sim.current
-    const d = state.d
+    const { d, s: progress, seg: segs, near, far } = sim.current
     const dt = Math.min(delta, 0.1)
-    const place = (
-      st: { list: Vehicle[]; s: Float32Array; seg: Int32Array },
-      body: THREE.InstancedMesh,
-      top: THREE.InstancedMesh,
-      lamps: THREE.InstancedMesh,
-    ) => {
-      st.list.forEach((v, i) => {
-        const L = v.lane
-        const s = (st.s[i] + v.speed * TRAFFIC_SPEED * dt) % L.length
-        st.s[i] = s
-        let seg = st.seg[i]
-        if (s < L.cum[seg]) seg = 0
-        while (seg < L.pts.length - 2 && L.cum[seg + 1] < s) seg++
-        st.seg[i] = seg
-        const a = L.pts[seg]
-        const b = L.pts[seg + 1]
-        const segLen = L.cum[seg + 1] - L.cum[seg] || 1
-        const k = (s - L.cum[seg]) / segLen
-        const x = a[0] + (b[0] - a[0]) * k
-        const z = a[1] + (b[1] - a[1]) * k
-        d.position.set(x, roadY(x, z), z)
-        d.rotation.set(0, Math.atan2(-(b[1] - a[1]), b[0] - a[0]), 0)
-        d.updateMatrix()
-        body.setMatrixAt(i, d.matrix)
-        top.setMatrixAt(i, d.matrix)
-        if (lightsOn) lamps.setMatrixAt(i, d.matrix)
-        if (!state.colored) {
-          body.setColorAt(i, new THREE.Color(v.color))
-          top.setColorAt(i, new THREE.Color(v.bike ? v.rider : '#1d2227'))
-        }
-      })
-      body.instanceMatrix.needsUpdate = true
-      top.instanceMatrix.needsUpdate = true
-      if (lightsOn) lamps.instanceMatrix.needsUpdate = true
-    }
-    place(state.cars, cb, cc, cl)
-    place(state.bikes, bb, br, bl)
-    if (!state.colored) {
-      state.colored = true
-      for (const m of [cb, cc, bb, br]) if (m.instanceColor) m.instanceColor.needsUpdate = true
+    const lod2 = LOD_DISTANCE * LOD_DISTANCE
+    const cam = camera.position
+    for (const m of CAR_MODELS) near[m] = far[m] = 0
+
+    vehicles.forEach((v, i) => {
+      const L = v.lane
+      const s = (progress[i] + v.speed * TRAFFIC_SPEED * dt) % L.length
+      progress[i] = s
+      let seg = segs[i]
+      if (s < L.cum[seg]) seg = 0
+      while (seg < L.pts.length - 2 && L.cum[seg + 1] < s) seg++
+      segs[i] = seg
+      const a = L.pts[seg]
+      const b = L.pts[seg + 1]
+      const k = (s - L.cum[seg]) / (L.cum[seg + 1] - L.cum[seg] || 1)
+      const x = a[0] + (b[0] - a[0]) * k
+      const z = a[1] + (b[1] - a[1]) * k
+      const y = roadY(x, z)
+      d.position.set(x, y, z)
+      d.rotation.set(0, Math.atan2(-(b[1] - a[1]), b[0] - a[0]), 0)
+      d.updateMatrix()
+      if (lightsOn) lamps.setMatrixAt(i, d.matrix)
+
+      const dx = x - cam.x
+      const dy = y - cam.y
+      const dz = z - cam.z
+      if (dx * dx + dy * dy + dz * dz < lod2) meshes.current[v.model]?.setMatrixAt(near[v.model]++, d.matrix)
+      else meshes.current[`${v.model}_lod1`]?.setMatrixAt(far[v.model]++, d.matrix)
+    })
+    if (lightsOn) lamps.instanceMatrix.needsUpdate = true
+
+    for (const m of CAR_MODELS) {
+      for (const [mesh, n] of [
+        [meshes.current[m], near[m]],
+        [meshes.current[`${m}_lod1`], far[m]],
+      ] as const) {
+        if (!mesh) continue
+        mesh.count = n
+        mesh.instanceMatrix.needsUpdate = true
+      }
     }
   })
 
+  if (!pack) return null
   return (
     <group>
-      <instancedMesh ref={carBody} args={[geo.carBody, undefined, cars.length]} castShadow frustumCulled={false}>
-        <meshLambertMaterial />
-      </instancedMesh>
-      <instancedMesh ref={carCabin} args={[geo.carCabin, undefined, cars.length]} frustumCulled={false}>
-        <meshLambertMaterial />
-      </instancedMesh>
-      <instancedMesh ref={bikeBody} args={[geo.bikeBody, undefined, bikes.length]} frustumCulled={false}>
-        <meshLambertMaterial />
-      </instancedMesh>
-      <instancedMesh ref={bikeRider} args={[geo.bikeRider, undefined, bikes.length]} frustumCulled={false}>
-        <meshLambertMaterial />
-      </instancedMesh>
-      <instancedMesh ref={carLights} args={[geo.carLights, undefined, cars.length]} frustumCulled={false} visible={false}>
-        <meshBasicMaterial vertexColors />
-      </instancedMesh>
-      <instancedMesh ref={bikeLights} args={[geo.bikeLights, undefined, bikes.length]} frustumCulled={false} visible={false}>
+      {CAR_MODELS.flatMap((m) =>
+        capacity[m]
+          ? [m, `${m}_lod1`].map((name) => (
+              <instancedMesh
+                key={name}
+                ref={(el) => {
+                  // A new mesh draws nothing until the frame loop has placed it.
+                  if (el && meshes.current[name] !== el) el.count = 0
+                  meshes.current[name] = el
+                }}
+                args={[pack.geometry[name], pack.material[name], capacity[m]]}
+                castShadow
+                frustumCulled={false}
+              />
+            ))
+          : [],
+      )}
+      <instancedMesh ref={carLights} args={[lightsGeo, undefined, vehicles.length]} frustumCulled={false} visible={false}>
         <meshBasicMaterial vertexColors />
       </instancedMesh>
     </group>
@@ -298,81 +299,66 @@ function circle(cx: number, cz: number, rx: number, rz: number): XZ[] {
   })
 }
 
+/** How deep the models' hulls sit in the water. */
+const DRAFT = 0.07
+
+/**
+ * Boats from `boats.glb`: river cruisers running up and down the Han, and
+ * fishing boats, a tug, a sailboat and a speedboat out in the bay and off My
+ * Khe. Each follows its own loop and bobs on the swell.
+ */
 export function Boats() {
+  const pack = usePack('boats')
   const boats = useMemo(() => {
     const center = riverSamples()
       .filter((s) => s.t > 0.08 && s.t < 0.98)
       .map((s) => [s.x, s.z] as const)
     return [
-      { curve: outAndBack(center, 1.1), speed: 0.012, u: 0.1, hull: '#FFF8EB', size: 0.85 },
-      { curve: outAndBack(center, 1.1), speed: 0.012, u: 0.6, hull: '#F28C7B', size: 0.75 },
-      { curve: loop(circle(-12, -38, 7, 4)), speed: 0.018, u: 0, hull: '#7FB7D9', size: 1 },
-      { curve: loop(circle(6, -42, 5, 3)), speed: -0.022, u: 0.4, hull: '#F5C76B', size: 0.9 },
-      { curve: loop(circle(40, 8, 4, 9)), speed: 0.014, u: 0.2, hull: '#FFF8EB', size: 1.1 },
-      { curve: loop(circle(46, -10, 3, 5)), speed: -0.02, u: 0.7, hull: '#9ED0B4', size: 0.9 },
+      { model: 'river-cruise', curve: outAndBack(center, 1.1), speed: 0.012, u: 0.1 },
+      { model: 'river-cruise-tall', curve: outAndBack(center, 1.1), speed: 0.012, u: 0.6 },
+      { model: 'fishing', curve: loop(circle(-12, -38, 7, 4)), speed: 0.018, u: 0 },
+      { model: 'tug', curve: loop(circle(6, -42, 5, 3)), speed: -0.022, u: 0.4 },
+      { model: 'sail', curve: loop(circle(40, 8, 4, 9)), speed: 0.014, u: 0.2 },
+      { model: 'speed', curve: loop(circle(46, -10, 3, 5)), speed: -0.02, u: 0.7 },
+      { model: 'fishing', curve: loop(circle(-24, -34, 4, 2.5)), speed: -0.016, u: 0.5 },
     ]
   }, [])
 
-  const refs = useRef<(THREE.Group | null)[]>([])
+  const refs = useRef<(THREE.Mesh | null)[]>([])
+  /** Progress along each loop, mutated only in the frame loop. */
+  const progress = useRef<Float32Array | null>(null)
   const p = useMemo(() => new THREE.Vector3(), [])
   const t = useMemo(() => new THREE.Vector3(), [])
 
   useFrame(({ clock }, delta) => {
+    progress.current ??= Float32Array.from(boats, (b) => b.u)
+    const u = progress.current
     const time = clock.elapsedTime
     const dt = Math.min(delta, 0.1)
     boats.forEach((b, i) => {
       const g = refs.current[i]
       if (!g) return
-      b.u = (((b.u + b.speed * dt) % 1) + 1) % 1
-      b.curve.getPointAt(b.u, p)
-      b.curve.getTangentAt(b.u, t)
+      u[i] = (((u[i] + b.speed * dt) % 1) + 1) % 1
+      b.curve.getPointAt(u[i], p)
+      b.curve.getTangentAt(u[i], t)
       const dir = Math.sign(b.speed) || 1
-      g.position.set(p.x, WORLD.waterY + 0.02 + Math.sin(time * 1.8 + i) * 0.03, p.z)
+      g.position.set(p.x, WORLD.waterY - DRAFT + Math.sin(time * 1.8 + i) * 0.03, p.z)
       g.rotation.set(Math.sin(time * 1.3 + i) * 0.05, Math.atan2(-t.z * dir, t.x * dir), Math.cos(time * 1.1 + i) * 0.05)
     })
   })
 
+  if (!pack) return null
   return (
     <group>
       {boats.map((b, i) => (
-        <group key={i} ref={(el) => void (refs.current[i] = el)} scale={b.size}>
-          <Boat hull={b.hull} />
-        </group>
+        <mesh
+          key={i}
+          ref={(el) => void (refs.current[i] = el)}
+          geometry={pack.geometry[b.model]}
+          material={pack.material[b.model]}
+          castShadow
+        />
       ))}
-    </group>
-  )
-}
-
-const hullGeometry = (() => {
-  const s = new THREE.Shape()
-  s.moveTo(-0.5, 0.12)
-  s.lineTo(0.55, 0.16)
-  s.quadraticCurveTo(0.42, -0.05, 0.25, -0.1)
-  s.lineTo(-0.42, -0.1)
-  s.closePath()
-  const g = new THREE.ExtrudeGeometry(s, { depth: 0.36, bevelEnabled: false })
-  g.translate(0, 0, -0.18)
-  return g
-})()
-
-function Boat({ hull }: { hull: string }) {
-  return (
-    <group>
-      <mesh geometry={hullGeometry} castShadow>
-        <meshLambertMaterial color={hull} flatShading />
-      </mesh>
-      <mesh position={[-0.1, 0.25, 0]} castShadow>
-        <boxGeometry args={[0.32, 0.18, 0.26]} />
-        <meshLambertMaterial color={palette.warmWhite} />
-      </mesh>
-      <mesh position={[-0.12, 0.36, 0]}>
-        <boxGeometry args={[0.38, 0.04, 0.3]} />
-        <meshLambertMaterial color={palette.pagodaRed} />
-      </mesh>
-      <mesh position={[0.18, 0.4, 0]}>
-        <cylinderGeometry args={[0.012, 0.012, 0.5, 4]} />
-        <meshLambertMaterial color={palette.woodDark} />
-      </mesh>
     </group>
   )
 }

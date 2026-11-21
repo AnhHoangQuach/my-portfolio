@@ -59,6 +59,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     loading: {
       title: t('loading.title'),
       stages: [0, 1, 2, 3, 4].map((i) => t(`loading.stage${i}`)),
+      enter: t('loading.enter'),
+      enterNote: t('loading.enterNote'),
     },
     intro: {
       title: t('intro.title'),
@@ -79,6 +81,20 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       night: t('hud.night'),
       localeLabel: t('hud.localeLabel'),
     },
+    ride: {
+      start: t('ride.start'),
+      short: t('ride.short'),
+      exit: t('ride.exit'),
+      hint: t('ride.hint'),
+      open: t('ride.open'),
+      speed: t('ride.speed'),
+      gas: t('ride.gas'),
+      brake: t('ride.brake'),
+      left: t('ride.left'),
+      right: t('ride.right'),
+    },
+    map: { label: t('map.label'), you: t('map.you') },
+    fireShow: { live: t('fireShow.live'), schedule: t('fireShow.schedule') },
     panel: {
       back: t('panel.back'),
       next: t('panel.next'),

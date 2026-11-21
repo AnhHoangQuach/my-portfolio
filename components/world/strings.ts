@@ -8,7 +8,7 @@ export interface WorldStrings {
   /** Small label above the name / title, e.g. "Portfolio". */
   kicker: string
   identity: { name: string; initials: string; role: string; location: string }
-  loading: { title: string; stages: string[] }
+  loading: { title: string; stages: string[]; enter: string; enterNote: string }
   intro: { title: string; subtitle: string; explore: string; skip: string }
   hud: {
     menu: string
@@ -24,6 +24,20 @@ export interface WorldStrings {
     night: string
     localeLabel: string
   }
+  ride: {
+    start: string
+    short: string
+    exit: string
+    hint: string
+    open: string
+    speed: string
+    gas: string
+    brake: string
+    left: string
+    right: string
+  }
+  map: { label: string; you: string }
+  fireShow: { live: string; schedule: string }
   panel: { back: string; next: string; previous: string; stop: string }
   fallback: { title: string; body: string; cta: string }
   landmarks: Record<LandmarkId, { name: string; section: string; blurb: string }>

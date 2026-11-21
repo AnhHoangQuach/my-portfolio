@@ -119,7 +119,7 @@ function createLampMaterial() {
  * one instanced draw, faded in with the night. Hundreds of real lights would
  * be unaffordable; this reads the same from street level up.
  */
-function createLightPoolMaterial() {
+export function createLightPoolMaterial() {
   return new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,

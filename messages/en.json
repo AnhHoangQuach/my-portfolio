@@ -34,7 +34,9 @@
       "stage1": "Gathering projects…",
       "stage2": "Compiling five years of experience…",
       "stage3": "Sharpening the skills…",
-      "stage4": "Almost ready…"
+      "stage4": "Almost ready…",
+      "enter": "Enter the city",
+      "enterNote": "Loads the interactive 3D map of Da Nang"
     },
     "intro": {
       "title": "Welcome to My Portfolio",
@@ -54,6 +56,26 @@
       "daNang": "Da Nang",
       "day": "Day",
       "night": "Night"
+    },
+    "ride": {
+      "start": "Drive a car",
+      "short": "Drive",
+      "exit": "Get out",
+      "hint": "W A S D or arrow keys to drive · Space to brake · E to open · Esc to get out",
+      "open": "Open",
+      "speed": "km/h",
+      "gas": "Accelerate",
+      "brake": "Brake / reverse",
+      "left": "Steer left",
+      "right": "Steer right"
+    },
+    "map": {
+      "label": "City map",
+      "you": "You are here"
+    },
+    "fireShow": {
+      "live": "Live: Dragon Bridge fire show",
+      "schedule": "Sat & Sun 21:00, Da Nang time"
     },
     "panel": {
       "back": "Back to World",

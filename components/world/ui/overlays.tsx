@@ -12,9 +12,13 @@ import type { WorldStrings } from '../strings'
 
 /**
  * Server-rendered and visible on first paint, so the page has a real LCP
- * element before a single byte of three.js arrives.
+ * element before a single byte of three.js arrives. It starts as a welcome
+ * screen with an "Enter" button: the 3D world only loads once the visitor
+ * interacts (see `WorldExperience`), then this shows its progress.
  */
 export function LoadingScreen({ strings }: { strings: WorldStrings }) {
+  const started = useWorld((s) => s.started)
+  const start = useWorld((s) => s.start)
   const phase = useWorld((s) => s.phase)
   const stage = useWorld((s) => s.loadStage)
   const [gone, setGone] = useState(false)
@@ -38,7 +42,7 @@ export function LoadingScreen({ strings }: { strings: WorldStrings }) {
         pointerEvents: done ? 'none' : 'auto',
         background: 'linear-gradient(180deg, #A9D8E8 0%, #D9EFF2 55%, #FFF0D6 100%)',
       }}
-      aria-busy={!done}
+      aria-busy={started && !done}
     >
       <div className="world-cloud top-[14%] left-[8%] h-10 w-44" />
       <div className="world-cloud top-[26%] right-[6%] h-12 w-56 [animation-delay:-5s]" />
@@ -54,25 +58,40 @@ export function LoadingScreen({ strings }: { strings: WorldStrings }) {
         <p className="mt-2 text-sm font-medium text-(--w-ink-soft)">
           {strings.identity.role} · {strings.identity.location}
         </p>
-        <div
-          className="mt-8 h-3 w-full overflow-hidden rounded-full border-2 border-(--w-wood)/40 bg-(--w-paper)/70"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={pct}
-          aria-label={strings.loading.title}
-        >
-          <div
-            className="h-full rounded-full transition-[width] duration-700 ease-out"
-            style={{
-              width: `${Math.max(6, pct)}%`,
-              background: 'linear-gradient(90deg, #69C5C0, #F2B632)',
-            }}
-          />
+        {/* Same height either way, so the title doesn't jump when loading starts. */}
+        <div className="mt-8 flex h-22 w-full flex-col items-center justify-center">
+          {started ? (
+            <>
+              <div
+                className="h-3 w-full overflow-hidden rounded-full border-2 border-(--w-wood)/40 bg-(--w-paper)/70"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={pct}
+                aria-label={strings.loading.title}
+              >
+                <div
+                  className="h-full rounded-full transition-[width] duration-700 ease-out"
+                  style={{
+                    width: `${Math.max(6, pct)}%`,
+                    background: 'linear-gradient(90deg, #69C5C0, #F2B632)',
+                  }}
+                />
+              </div>
+              <p className="mt-3 min-h-5 text-sm text-(--w-ink-soft)" aria-live="polite">
+                {stages[Math.min(stage, stages.length - 1)]}
+              </p>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={start} className="world-btn world-btn-primary px-6 py-3 text-base">
+                <Compass className="size-5" aria-hidden />
+                {strings.loading.enter}
+              </button>
+              <p className="mt-3 min-h-5 text-sm text-(--w-ink-soft)">{strings.loading.enterNote}</p>
+            </>
+          )}
         </div>
-        <p className="mt-3 min-h-5 text-sm text-(--w-ink-soft)" aria-live="polite">
-          {stages[Math.min(stage, stages.length - 1)]}
-        </p>
       </div>
     </div>
   )

@@ -246,6 +246,46 @@ export function createBuildingMaterial() {
   return m
 }
 
+/**
+ * Material for the glTF model packs (`public/models/*.glb`): Lambert like
+ * the rest of the city, textured from the kit's colour atlas. `flat` is for
+ * the simplified `_lod1` meshes, which ship without normals.
+ *
+ * With `windows`, the glazing lights up after dusk, room by room. Glazing is
+ * found by where it samples the atlas — Kenney's City Kit paints glass from
+ * its two blue swatches (row 2, columns 5–6) — and rooms are cells of world
+ * space, so the pattern holds however an instance is scaled.
+ */
+export function createKitMaterial(
+  map: THREE.Texture | null,
+  { flat = false, windows = false, side = THREE.FrontSide }: { flat?: boolean; windows?: boolean; side?: THREE.Side } = {},
+) {
+  const m = new THREE.MeshLambertMaterial({ map, flatShading: flat, side })
+  if (!windows) return m
+  m.onBeforeCompile = (shader) => {
+    injectWorldPos(shader)
+    shader.uniforms.uNight = daylight.night
+    shader.uniforms.uWindow = { value: new THREE.Color(palette.window) }
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uNight;\nuniform vec3 uWindow;')
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        #ifdef USE_MAP
+          float glass = step(0.5, vMapUv.x) * step(vMapUv.x, 0.75) * step(0.25, vMapUv.y) * step(vMapUv.y, 0.5);
+          float room = wHash(floor(vWPos.xz * 3.0) + floor(vWPos.y * 3.4) * 17.0);
+          // A few rooms by day; about half the city is home after dark.
+          // HDR (> 1.5) at night so bloom picks the windows out.
+          float lit = step(mix(0.93, 0.48, uNight), room);
+          float warmth = mix(0.85, 1.15, fract(room * 7.31));
+          totalEmissiveRadiance += uWindow * glass * lit * warmth * mix(0.04, 2.3, uNight);
+        #endif`,
+      )
+  }
+  m.customProgramCacheKey = () => `world-kit-windows-${flat ? 'flat' : 'smooth'}`
+  return m
+}
+
 /* ------------------------------------------------------------------------ */
 /* Foliage                                                                   */
 /* ------------------------------------------------------------------------ */

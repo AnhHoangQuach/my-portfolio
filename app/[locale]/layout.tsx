@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { notFound } from 'next/navigation'
-import { NextIntlClientProvider, hasLocale } from 'next-intl'
+import { hasLocale } from 'next-intl'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -10,6 +10,9 @@ import { ogLocale } from '@/lib/metadata'
 import { routing } from '@/i18n/routing'
 import { fontVariables } from '@/app/fonts'
 import '../globals.css'
+
+/** Set at build time on Vercel's own infrastructure. */
+const ON_VERCEL = process.env.VERCEL === '1'
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
@@ -122,16 +125,22 @@ export default async function LocaleLayout({
   // `lang` comes from the route param — no request-header read, no opt-out of
   // static rendering.
   //
-  // The provider is mounted for `locale` only — the client-side navigation
-  // helpers in `@/i18n/navigation` read it. No `messages` prop: every Client
-  // Component gets its strings as props, so the catalogue never enters the
-  // browser payload.
+  // No NextIntlClientProvider: every Client Component gets its strings as
+  // props and no client code uses next-intl hooks, so neither the catalogue
+  // nor the client i18n runtime enters the browser payload.
   return (
     <html lang={locale} className={fontVariables}>
       <body className="min-h-dvh bg-[#bfe3ef] font-sans text-[#3e3a34] antialiased">
-        <NextIntlClientProvider locale={locale}>{children}</NextIntlClientProvider>
-        <Analytics />
-        <SpeedInsights />
+        {children}
+        {/* Vercel serves these scripts from /_vercel/* on its own hosts only;
+            anywhere else (local `next start`, previews elsewhere) they 404 and
+            log console errors. `VERCEL` is set at build time on Vercel. */}
+        {ON_VERCEL && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
       </body>
     </html>
   )

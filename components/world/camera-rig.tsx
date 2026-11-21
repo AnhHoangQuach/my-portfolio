@@ -13,6 +13,7 @@ import {
   WELCOME_SHOT,
   type Vec3,
 } from '@/lib/world/landmarks'
+import { car, cameraProbe } from '@/lib/world/drive'
 import { useWorld, type CameraCommand } from '@/lib/world/store'
 
 const LIMITS = {
@@ -32,6 +33,9 @@ const CLICK_GUARD_MS = 1200
 /** Slow, cinematic damping for scripted moves; snappier for hand control. */
 const SMOOTH_CINEMATIC = 0.85
 const SMOOTH_INTERACTIVE = 0.32
+
+/** Chase camera: how far behind and above the car it rides, and where it looks. */
+const CHASE = { back: 2.2, up: 0.95, ahead: 1.6, lookUp: 0.22 }
 
 const toVectors = (pts: Vec3[]) => pts.map(([x, y, z]) => new THREE.Vector3(x, y, z))
 
@@ -57,6 +61,8 @@ interface Rig {
   token: number
   /** Slow orbit behind the welcome card; stops the moment the visitor takes over. */
   drift: boolean
+  /** Chase-camera state while riding; `null` otherwise. */
+  chase: { position: THREE.Vector3; target: THREE.Vector3 } | null
 }
 
 /** Pull the camera back on narrow screens so the shot still fits. */
@@ -73,6 +79,58 @@ function fit(rig: Rig, position: Vec3, target: Vec3, wide = 1): [THREE.Vector3, 
 
 function stopTimeline(rig: Rig) {
   rig.intro = null
+}
+
+/** Out of the car: hand the orbit limits back to the visitor. */
+function endChase(rig: Rig) {
+  if (!rig.chase) return
+  rig.chase = null
+  const c = rig.controls
+  c.minDistance = LIMITS.minDistance
+  c.maxPolarAngle = LIMITS.maxPolarAngle
+  c.enabled = true
+}
+
+/**
+ * Ride mode: the rig follows the car every frame (see `stepChase`). Orbit
+ * input is off and the limits relax, since the chase camera sits closer and
+ * lower than the orbit allows. Starts from wherever the camera is now, so
+ * getting in is a short swoop rather than a cut.
+ */
+function startChase(rig: Rig) {
+  const c = rig.controls
+  rig.token++
+  rig.drift = false
+  useWorld.getState().setTransitioning(false)
+  c.enabled = false
+  c.minDistance = 0.3
+  c.maxPolarAngle = Math.PI / 2 - 0.02
+  c.smoothTime = SMOOTH_INTERACTIVE
+  void c.setFocalOffset(0, 0, 0, false)
+  rig.chase ??= { position: new THREE.Vector3(), target: new THREE.Vector3() }
+  c.getPosition(rig.chase.position)
+  c.getTarget(rig.chase.target)
+}
+
+const chaseP = new THREE.Vector3()
+const chaseT = new THREE.Vector3()
+
+function stepChase(rig: Rig, delta: number) {
+  const chase = rig.chase
+  if (!chase) return
+  const fx = Math.cos(car.heading)
+  const fz = Math.sin(car.heading)
+  chaseP.set(car.x - fx * CHASE.back, car.y + CHASE.up, car.z - fz * CHASE.back)
+  chaseT.set(car.x + fx * CHASE.ahead, car.y + CHASE.lookUp, car.z + fz * CHASE.ahead)
+  const dt = Math.min(delta, 0.1)
+  chase.position.lerp(chaseP, 1 - Math.exp(-5 * dt))
+  chase.target.lerp(chaseT, 1 - Math.exp(-12 * dt))
+  const { position: p, target: t } = chase
+  const c = rig.controls
+  void c.setLookAt(p.x, p.y, p.z, t.x, t.y, t.z, false)
+  // The controls already updated this frame (priority −1); apply now so the
+  // camera doesn't trail the car by a frame.
+  c.update(0)
 }
 
 /**
@@ -138,6 +196,7 @@ function playIntro(rig: Rig) {
   }
 }
 
+const probeDir = new THREE.Vector3()
 const flightP = new THREE.Vector3()
 const flightT = new THREE.Vector3()
 
@@ -155,6 +214,12 @@ function stepIntro(rig: Rig, flight: IntroFlight, now: number) {
 
 function runCommand(rig: Rig, cmd: CameraCommand) {
   const c = rig.controls
+  if (cmd.kind === 'ride') {
+    stopTimeline(rig)
+    startChase(rig)
+    return
+  }
+  endChase(rig)
   switch (cmd.kind) {
     case 'intro':
       playIntro(rig)
@@ -201,7 +266,14 @@ export function CameraRig() {
   useEffect(() => {
     const c = controls.current
     if (!c) return
-    rig.current = { controls: c, viewport: () => get().size, intro: null, token: 0, drift: false }
+    rig.current = {
+      controls: c,
+      viewport: () => get().size,
+      intro: null,
+      token: 0,
+      drift: false,
+      chase: null,
+    }
     const [p] = toVectors([INTRO_PATH.position[0]])
     const [t] = toVectors([INTRO_PATH.target[0]])
     c.setLookAt(p.x, p.y, p.z, t.x, t.y, t.z, false)
@@ -236,9 +308,16 @@ export function CameraRig() {
     runCommand(rig.current, command)
   }, [command])
 
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock, camera }, delta) => {
     const r = rig.current
     if (!r) return
+    if (r.chase) stepChase(r, delta)
+    // Where the camera is, for the mini-map.
+    camera.getWorldDirection(probeDir)
+    cameraProbe.x = camera.position.x
+    cameraProbe.z = camera.position.z
+    cameraProbe.yaw = Math.atan2(probeDir.z, probeDir.x)
+    cameraProbe.ready = true
     // The intro flight; a skip or any other command clears `r.intro`.
     if (r.intro && !stepIntro(r, r.intro, clock.elapsedTime)) {
       r.intro = null

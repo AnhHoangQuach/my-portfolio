@@ -1,15 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Clock, Globe, LocateFixed, Menu, Moon, MousePointerClick, Sun, X } from 'lucide-react'
+import { Suspense, lazy, useEffect, useState } from 'react'
+import { Car, Clock, Globe, LocateFixed, Menu, Moon, MousePointerClick, Sun, X } from 'lucide-react'
 
-import { usePathname, useRouter } from '@/i18n/navigation'
-import { DAY_HOUR, NIGHT_HOUR, daNangHour, formatHour } from '@/lib/world/daylight'
+import Link from 'next/link'
+
+import { getPathname } from '@/i18n/navigation'
+import { DAY_HOUR, NIGHT_HOUR, TIME_MODE_KEY, daNangHour, formatHour } from '@/lib/world/clock'
 import { LANDMARKS, LANDMARK_ORDER } from '@/lib/world/landmarks'
 import { useWorld } from '@/lib/world/store'
 import { cn } from '@/lib/utils'
 import { SectionIcon } from '../section-icon'
 import type { WorldStrings } from '../strings'
+import { FireShowBadge } from './fire-show'
+import { TimedHint } from './timed-hint'
+
+// The map and the ride controls read the scene's geography (and three.js
+// with it), so they load as their own chunks once the world is up — never
+// on the critical path.
+const Minimap = lazy(() => import('./minimap'))
+const RideHud = lazy(() => import('./ride-hud'))
 
 /**
  * Game-style heads-up display: identity badge, section menu, landmark dock,
@@ -18,14 +28,27 @@ import type { WorldStrings } from '../strings'
 export function Hud({ strings, locale }: { strings: WorldStrings; locale: string }) {
   const phase = useWorld((s) => s.phase)
   const activeId = useWorld((s) => s.activeId)
+  const ride = useWorld((s) => s.ride)
   if (phase !== 'explore') return null
 
   return (
     <>
       <IdentityBadge strings={strings} />
       <TopMenu strings={strings} locale={locale} />
-      <Dock strings={strings} hidden={activeId !== null} />
-      <ControlsHint text={strings.hud.hint} />
+      <Suspense fallback={null}>
+        <Minimap strings={strings} />
+        {ride === 'on' && <RideHud strings={strings} />}
+      </Suspense>
+      {ride === 'off' && (
+        <>
+          <Dock strings={strings} hidden={activeId !== null} />
+          <TimedHint>
+            <MousePointerClick className="size-4 text-(--w-wood)" aria-hidden />
+            {strings.hud.hint}
+          </TimedHint>
+        </>
+      )}
+      {activeId === null && <FireShowBadge strings={strings} />}
     </>
   )
 }
@@ -57,9 +80,6 @@ function IdentityBadge({ strings }: { strings: WorldStrings }) {
     </button>
   )
 }
-
-/** Remembered across visits; storage can be unavailable, so every access is guarded. */
-export const TIME_MODE_KEY = 'world-time-mode'
 
 /**
  * Time of day: Auto follows the real clock in Da Nang (shown live), then the
@@ -109,20 +129,23 @@ function TimeToggle({ strings }: { strings: WorldStrings }) {
   )
 }
 
+/**
+ * The world is the only page, so switching language is a plain link to the
+ * other locale's home — no client i18n runtime (or provider) needed.
+ */
 function LocaleToggle({ strings, locale }: { strings: WorldStrings; locale: string }) {
-  const router = useRouter()
-  const pathname = usePathname()
   const next = locale === 'en' ? 'ja' : 'en'
   return (
-    <button
-      type="button"
-      onClick={() => router.replace(pathname, { locale: next })}
+    <Link
+      href={getPathname({ href: '/', locale: next })}
+      replace
+      hrefLang={next}
       className="world-btn world-btn-ghost px-3 py-1.5 text-xs"
       aria-label={`${strings.hud.localeLabel} — ${strings.hud.switchLocale}`}
     >
       <Globe className="size-3.5" aria-hidden />
       {strings.hud.localeLabel}
-    </button>
+    </Link>
   )
 }
 
@@ -214,6 +237,7 @@ function Dock({ strings, hidden }: { strings: WorldStrings; hidden: boolean }) {
   const hoveredId = useWorld((s) => s.hoveredId)
   const setHovered = useWorld((s) => s.setHovered)
   const resetView = useWorld((s) => s.resetView)
+  const startRide = useWorld((s) => s.startRide)
 
   return (
     <div
@@ -270,28 +294,17 @@ function Dock({ strings, hidden }: { strings: WorldStrings; hidden: boolean }) {
       >
         <LocateFixed className="size-5" aria-hidden />
       </button>
-    </div>
-  )
-}
-
-function ControlsHint({ text }: { text: string }) {
-  const [visible, setVisible] = useState(true)
-  useEffect(() => {
-    const t = window.setTimeout(() => setVisible(false), 7000)
-    return () => window.clearTimeout(t)
-  }, [])
-  return (
-    <div
-      className={cn(
-        'pointer-events-none absolute inset-x-0 top-20 z-30 flex justify-center px-4 transition-opacity duration-700',
-        visible ? 'opacity-100' : 'opacity-0',
-      )}
-      aria-hidden={!visible}
-    >
-      <p className="world-card flex items-center gap-2 rounded-full! px-4 py-2 text-xs font-medium text-(--w-ink-soft)">
-        <MousePointerClick className="size-4 text-(--w-wood)" aria-hidden />
-        {text}
-      </p>
+      <button
+        type="button"
+        tabIndex={hidden ? -1 : 0}
+        onClick={startRide}
+        className="world-btn world-btn-primary size-14 shrink-0 flex-col justify-center gap-0.5 rounded-2xl! text-[10px]"
+        aria-label={strings.ride.start}
+        title={strings.ride.start}
+      >
+        <Car className="size-5" aria-hidden />
+        {strings.ride.short}
+      </button>
     </div>
   )
 }

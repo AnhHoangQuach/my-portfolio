@@ -21,6 +21,8 @@ import { CityCenter, EastBank, Greenery, Outskirts } from './scene/city'
 import { DragonBridge } from './scene/dragon-bridge'
 import { DragonFire } from './scene/dragon-fire'
 import { MarbleMountains, SonTra } from './scene/mountains'
+import { loadPack, packsFor } from './scene/models'
+import { PlayerCar } from './scene/player-car'
 import { Roads } from './scene/roads'
 import { StudioEnvironment } from './scene/environment'
 import { Terrain } from './scene/terrain'
@@ -49,20 +51,30 @@ function Clock() {
   return null
 }
 
+/** Longest the loading screen waits for the model packs before going on without them. */
+const MODEL_WAIT_MS = 8000
+
 /**
  * Compiles every shader up front (so the intro never hitches on a first-use
- * compile), waits for a couple of real frames, then tells the store we're live.
+ * compile) and waits for this tier's glTF model packs (downloaded and
+ * compiled in parallel), then for a couple of real frames, then tells the
+ * store we're live.
  */
 function ReadySignal() {
   const { gl, scene, camera } = useThree()
   const frames = useRef(-1)
+  // The tier at boot decides what the first view waits for.
+  const [bootQuality] = useState(() => useWorld.getState().quality)
 
   useEffect(() => {
     useWorld.getState().setLoadStage(2)
     let cancelled = false
+    const models = Promise.allSettled(packsFor(bootQuality).map((p) => loadPack(p, { gl, camera, scene })))
+    const timeout = new Promise((resolve) => window.setTimeout(resolve, MODEL_WAIT_MS))
     const compile = gl.compileAsync?.(scene, camera) ?? Promise.resolve()
     compile
       .catch(() => undefined)
+      .then(() => Promise.race([models, timeout]))
       .then(() => {
         if (cancelled) return
         useWorld.getState().setLoadStage(3)
@@ -71,7 +83,7 @@ function ReadySignal() {
     return () => {
       cancelled = true
     }
-  }, [gl, scene, camera])
+  }, [gl, scene, camera, bootQuality])
 
   useFrame(() => {
     if (frames.current < 0) return
@@ -97,7 +109,14 @@ function PointerReset() {
 }
 
 export default function WorldCanvas({ labels }: { labels: Record<LandmarkId, LandmarkLabel> }) {
-  const [quality, setQuality] = useState<Quality>(detectQuality)
+  // Mirrored into the store for scene components that don't get it as a prop —
+  // set before any child renders, since child effects run before ours.
+  const [quality, setQuality] = useState<Quality>(() => {
+    const q = detectQuality()
+    useWorld.getState().setQuality(q)
+    return q
+  })
+  useEffect(() => useWorld.getState().setQuality(quality), [quality])
   const [pinned] = useState(() => forcedQuality() !== null)
   const [dpr, setDpr] = useState<number>(QUALITY[quality].maxDpr)
   const start = INTRO_PATH.position[0]
@@ -162,6 +181,8 @@ export default function WorldCanvas({ labels }: { labels: Record<LandmarkId, Lan
 
           <Cars />
           <Boats />
+          {/* Before the camera rig: the chase camera reads this frame's car. */}
+          <PlayerCar />
 
           {quality === 'high' && <DeferredPostFX />}
 
